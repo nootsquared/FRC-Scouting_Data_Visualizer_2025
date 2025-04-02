@@ -32,6 +32,7 @@ import {
 } from "recharts";
 import { getTeamData, calculateTeamAverages, type MatchData } from "@/lib/data-service";
 import { DataProcessingControls, ProcessingMode, ZeroHandling } from "@/components/ui/data-processing-controls";
+import { getTeamPitData, type PitData } from "@/lib/pit-data-service";
 
 // Icons
 import { 
@@ -72,13 +73,16 @@ export default function TeamPage() {
   const [teamNumber, setTeamNumber] = useState("");
   const [teamData, setTeamData] = useState<MatchData[] | null>(null);
   const [teamAverages, setTeamAverages] = useState<any>(null);
+  const [pitData, setPitData] = useState<PitData | null>(null);
   const [processingMode, setProcessingMode] = useState<ProcessingMode>("average");
   const [zeroHandling, setZeroHandling] = useState<ZeroHandling>("include");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = getTeamData(parseInt(teamNumber));
+    const pit = getTeamPitData(parseInt(teamNumber));
     setTeamData(data);
+    setPitData(pit);
     setTeamAverages(calculateTeamAverages(data, processingMode, zeroHandling));
   };
 
@@ -559,6 +563,181 @@ export default function TeamPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Pit Scouting Data */}
+        <Card className="bg-[#1A1A1A] border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white">Pit Scouting Data</CardTitle>
+            <CardDescription className="text-gray-400">Technical specifications and capabilities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pitData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Physical Specifications */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                      Physical Specifications
+                    </h3>
+                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Drivetrain</span>
+                        <span className="text-white font-medium">{pitData.physical.drivetrainType}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Dimensions</span>
+                        <span className="text-white font-medium">{pitData.physical.robotWidth} × {pitData.physical.robotLength}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Weight</span>
+                        <span className="text-white font-medium">{pitData.physical.robotWeight}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Ground Clearance</span>
+                        <span className="text-white font-medium">{pitData.physical.groundClearance}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mechanisms */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                      Mechanisms
+                    </h3>
+                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Intake Type</span>
+                        <span className="text-white font-medium">{pitData.mechanisms.intakeType}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Intake Location</span>
+                        <span className="text-white font-medium">{pitData.mechanisms.intakeLocation}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Scoring Mechanism</span>
+                        <span className="text-white font-medium">{pitData.mechanisms.scoringMechanism}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Max Reach</span>
+                        <span className="text-white font-medium">{pitData.mechanisms.maxReach}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Climbing</span>
+                        <span className="text-white font-medium">{pitData.mechanisms.climbingCapability}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Electronics & Software */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                      Electronics & Software
+                    </h3>
+                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Controller</span>
+                        <span className="text-white font-medium">{pitData.electronics.mainController}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Motor Controllers</span>
+                        <span className="text-white font-medium">{pitData.electronics.motorControllers}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Vision</span>
+                        <span className="text-white font-medium">{pitData.software.visionSystem}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Language</span>
+                        <span className="text-white font-medium">{pitData.software.programmingLanguage}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Strategy */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
+                      Strategy
+                    </h3>
+                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Primary Role</span>
+                        <span className="text-white font-medium">{pitData.strategy.primaryRole}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Secondary Role</span>
+                        <span className="text-white font-medium">{pitData.strategy.secondaryRole}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Preferred Start</span>
+                        <span className="text-white font-medium">{pitData.strategy.preferredStartingPosition}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Features */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                      Special Features
+                    </h3>
+                    <div className="bg-gray-900 rounded-lg p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {pitData.strategy.specialFeatures.map((feature, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gray-800 text-white rounded-full text-sm"
+                          >
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Maintenance */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span>
+                      Maintenance
+                    </h3>
+                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Battery Count</span>
+                        <span className="text-white font-medium">{pitData.maintenance.batteryCount}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Repair Time</span>
+                        <span className="text-white font-medium">{pitData.maintenance.averageRepairTime}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Schedule</span>
+                        <span className="text-white font-medium">{pitData.maintenance.maintenanceSchedule}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                Enter a team number to view pit scouting data
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

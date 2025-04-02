@@ -1,0 +1,44 @@
+{
+  "teams": {
+    "226": {
+      "physical": {
+        "drivetrainType": "Swerve Drive",
+        "robotWidth": "28 inches",
+        "robotLength": "30 inches",
+        "robotWeight": "115 lbs",
+        "groundClearance": "2.5 inches"
+      },
+      "mechanisms": {
+        "intakeType": "Roller Claw",
+        "intakeLocation": "Front and Back",
+        "scoringMechanism": "Telescoping Arm",
+        "maxReach": "72 inches",
+        "climbingCapability": "Stage 1 & 2"
+      },
+      "electronics": {
+        "mainController": "REV Robotics Control Hub",
+        "motorControllers": "SPARK MAX",
+        "batteryConfiguration": "Single Battery - Center Mounted",
+        "sensorTypes": ["IMU", "Color Sensors", "Limit Switches", "Encoders"]
+      },
+      "software": {
+        "programmingLanguage": "Java",
+        "visionSystem": "Limelight 3.0",
+        "autonomousCapabilities": ["2-Piece Auto", "Path Planning", "Vision Tracking"],
+        "teleopFeatures": ["Auto-Align", "PID Control", "Driver Assists"]
+      },
+      "strategy": {
+        "primaryRole": "Scorer",
+        "secondaryRole": "Defense",
+        "preferredStartingPosition": "Source Side",
+        "specialFeatures": ["Quick Intake", "Multi-level Scoring", "Robust Defense"]
+      },
+      "maintenance": {
+        "batteryCount": 4,
+        "criticalSpares": ["Motors", "Belts", "Electronics"],
+        "averageRepairTime": "5-10 minutes",
+        "maintenanceSchedule": "Every 3 matches"
+      }
+    }
+  }
+} 
