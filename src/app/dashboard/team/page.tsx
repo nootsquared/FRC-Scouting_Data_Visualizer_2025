@@ -31,6 +31,7 @@ import {
   Area,
 } from "recharts";
 import { getTeamData, calculateTeamAverages, type MatchData } from "@/lib/data-service";
+import { DataProcessingControls, ProcessingMode, ZeroHandling } from "@/components/ui/data-processing-controls";
 
 // Icons
 import { 
@@ -47,16 +48,52 @@ import {
   Plus
 } from "lucide-react";
 
+// Add this custom tooltip style object
+const tooltipStyle = {
+  backgroundColor: '#1F2937',
+  border: 'none',
+  borderRadius: '8px',
+  padding: '12px',
+  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+};
+
+const tooltipLabelStyle = {
+  color: '#F3F4F6',
+  fontWeight: 600,
+  marginBottom: '4px',
+};
+
+const tooltipItemStyle = {
+  color: '#E5E7EB',
+  padding: '2px 0',
+};
+
 export default function TeamPage() {
   const [teamNumber, setTeamNumber] = useState("");
   const [teamData, setTeamData] = useState<MatchData[] | null>(null);
   const [teamAverages, setTeamAverages] = useState<any>(null);
+  const [processingMode, setProcessingMode] = useState<ProcessingMode>("average");
+  const [zeroHandling, setZeroHandling] = useState<ZeroHandling>("include");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = getTeamData(parseInt(teamNumber));
     setTeamData(data);
-    setTeamAverages(calculateTeamAverages(data));
+    setTeamAverages(calculateTeamAverages(data, processingMode, zeroHandling));
+  };
+
+  const handleModeChange = (mode: ProcessingMode) => {
+    setProcessingMode(mode);
+    if (teamData) {
+      setTeamAverages(calculateTeamAverages(teamData, mode, zeroHandling));
+    }
+  };
+
+  const handleZeroHandlingChange = (handling: ZeroHandling) => {
+    setZeroHandling(handling);
+    if (teamData) {
+      setTeamAverages(calculateTeamAverages(teamData, processingMode, handling));
+    }
   };
 
   const prepareCoralData = (matches: MatchData[], phase: 'Auton' | 'Teleop') => {
@@ -100,7 +137,7 @@ export default function TeamPage() {
 
   return (
     <div className="p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
@@ -119,8 +156,18 @@ export default function TeamPage() {
           </form>
         </div>
 
+        {/* Data Processing Controls */}
+        <div className="mb-12">
+          <DataProcessingControls
+            onModeChange={handleModeChange}
+            onZeroHandlingChange={handleZeroHandlingChange}
+            currentMode={processingMode}
+            currentZeroHandling={zeroHandling}
+          />
+        </div>
+
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl text-white">Total Matches</CardTitle>
@@ -166,13 +213,13 @@ export default function TeamPage() {
         </div>
 
         {/* Detailed Statistics */}
-        <Card className="bg-[#1A1A1A] border-gray-800">
-          <CardHeader>
+        <Card className="bg-[#1A1A1A] border-gray-800 mt-12">
+          <CardHeader className="pb-4">
             <CardTitle className="text-2xl text-white">Detailed Statistics</CardTitle>
             <CardDescription className="text-gray-400">Comprehensive performance metrics</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {/* Autonomous Stats */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Autonomous</h3>
@@ -281,8 +328,8 @@ export default function TeamPage() {
           </CardContent>
         </Card>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
               <CardTitle className="text-white">Autonomous Coral Scoring</CardTitle>
@@ -294,7 +341,11 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                  <Tooltip 
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
+                  />
                   <Legend />
                   <Bar dataKey="L4" stackId="a" fill="#8B5CF6" />
                   <Bar dataKey="L3" stackId="a" fill="#6366F1" />
@@ -316,7 +367,11 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                  <Tooltip 
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
+                  />
                   <Legend />
                   <Bar dataKey="L4" stackId="a" fill="#8B5CF6" />
                   <Bar dataKey="L3" stackId="a" fill="#6366F1" />
@@ -338,7 +393,11 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                  <Tooltip 
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
+                  />
                   <Legend />
                   <Bar dataKey="Processor" stackId="a" fill="#10B981" />
                   <Bar dataKey="Net" stackId="a" fill="#34D399" />
@@ -358,7 +417,11 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                  <Tooltip 
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
+                  />
                   <Legend />
                   <Bar dataKey="Processor" stackId="a" fill="#10B981" />
                   <Bar dataKey="Net" stackId="a" fill="#34D399" />
@@ -498,6 +561,11 @@ export default function TeamPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Version display */}
+      <div className="fixed bottom-4 right-4">
+        <span className="text-gray-400 text-sm">SC1</span>
       </div>
     </div>
   );

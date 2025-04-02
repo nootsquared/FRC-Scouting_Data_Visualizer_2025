@@ -1,4 +1,5 @@
 import scoutingData from '@/data/scouting-data.json';
+import { ProcessingMode, ZeroHandling } from '@/components/ui/data-processing-controls';
 
 export interface CoralScoring {
   l1: number;
@@ -75,23 +76,101 @@ export function getTeamData(teamNumber: number): MatchData[] {
   );
 }
 
-export function calculateTeamAverages(teamData: MatchData[]) {
+export function calculateTeamAverages(
+  teamData: MatchData[],
+  mode: ProcessingMode = "average",
+  zeroHandling: ZeroHandling = "include"
+) {
   if (teamData.length === 0) return null;
 
   const totalMatches = teamData.length;
-  const autonL4Average = average(teamData.map((m) => parseInt(m["Auton-Coral-L4"]) || 0));
-  const autonL3Average = average(teamData.map((m) => parseInt(m["Auton-Coral-L3"]) || 0));
-  const autonL2Average = average(teamData.map((m) => parseInt(m["Auton-Coral-L2"]) || 0));
-  const autonL1Average = average(teamData.map((m) => parseInt(m["Auton-Coral-L1"]) || 0));
-  const teleopL4Average = average(teamData.map((m) => parseInt(m["Teleop-Coral-L4"]) || 0));
-  const teleopL3Average = average(teamData.map((m) => parseInt(m["Teleop-Coral-L3"]) || 0));
-  const teleopL2Average = average(teamData.map((m) => parseInt(m["Teleop-Coral-L2"]) || 0));
-  const teleopL1Average = average(teamData.map((m) => parseInt(m["Teleop-Coral-L1"]) || 0));
+
+  const processData = (data: number[], mode: ProcessingMode, zeroHandling: ZeroHandling) => {
+    let processedData = [...data];
+    
+    // Handle zero values
+    if (zeroHandling === "exclude") {
+      processedData = processedData.filter(value => value > 0);
+    }
+    
+    if (processedData.length === 0) return 0;
+    
+    // Apply processing mode
+    switch (mode) {
+      case "average":
+        return average(processedData);
+      case "top50":
+        processedData.sort((a, b) => b - a);
+        const topHalf = processedData.slice(0, Math.ceil(processedData.length / 2));
+        return average(topHalf);
+      case "best":
+        return Math.max(...processedData);
+      default:
+        return average(processedData);
+    }
+  };
+
+  const autonL4Average = processData(
+    teamData.map((m) => parseInt(m["Auton-Coral-L4"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const autonL3Average = processData(
+    teamData.map((m) => parseInt(m["Auton-Coral-L3"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const autonL2Average = processData(
+    teamData.map((m) => parseInt(m["Auton-Coral-L2"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const autonL1Average = processData(
+    teamData.map((m) => parseInt(m["Auton-Coral-L1"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const teleopL4Average = processData(
+    teamData.map((m) => parseInt(m["Teleop-Coral-L4"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const teleopL3Average = processData(
+    teamData.map((m) => parseInt(m["Teleop-Coral-L3"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const teleopL2Average = processData(
+    teamData.map((m) => parseInt(m["Teleop-Coral-L2"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const teleopL1Average = processData(
+    teamData.map((m) => parseInt(m["Teleop-Coral-L1"]) || 0),
+    mode,
+    zeroHandling
+  );
   
-  const autonAlgaeProcessor = average(teamData.map((m) => parseInt(m["Auton-Algae-Processor"]) || 0));
-  const autonAlgaeNet = average(teamData.map((m) => parseInt(m["Auton-Algae-Net"]) || 0));
-  const teleopAlgaeProcessor = average(teamData.map((m) => parseInt(m["Teleop-Algae-Processor"]) || 0));
-  const teleopAlgaeNet = average(teamData.map((m) => parseInt(m["Teleop-Algae-Net"]) || 0));
+  const autonAlgaeProcessor = processData(
+    teamData.map((m) => parseInt(m["Auton-Algae-Processor"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const autonAlgaeNet = processData(
+    teamData.map((m) => parseInt(m["Auton-Algae-Net"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const teleopAlgaeProcessor = processData(
+    teamData.map((m) => parseInt(m["Teleop-Algae-Processor"]) || 0),
+    mode,
+    zeroHandling
+  );
+  const teleopAlgaeNet = processData(
+    teamData.map((m) => parseInt(m["Teleop-Algae-Net"]) || 0),
+    mode,
+    zeroHandling
+  );
   
   const successfulClimbs = teamData.filter((m) => m["Climb-Status"] === 's' || m["Climb-Status"] === 'd').length;
   const climbAttempts = teamData.filter((m) => m["Climb-Status"] !== 'n').length;
