@@ -69,6 +69,16 @@ const tooltipItemStyle = {
   padding: '2px 0',
 };
 
+// Add this type for RP data
+interface RPStats {
+  coopRP: number;
+  autoRP: number;
+  coralRP: number;
+  bargeRP: number;
+  totalRP: number;
+  avgRPPerMatch: number;
+}
+
 export default function TeamPage() {
   const [teamNumber, setTeamNumber] = useState("");
   const [teamData, setTeamData] = useState<MatchData[] | null>(null);
@@ -137,6 +147,62 @@ export default function TeamPage() {
       case 'x': return '❌ Failed';
       default: return '❓ Unknown';
     }
+  };
+
+  // Add RP calculation function
+  const calculateRPStats = (matches: MatchData[]): RPStats => {
+    if (!matches || matches.length === 0) return {
+      coopRP: 0,
+      autoRP: 0,
+      coralRP: 0,
+      bargeRP: 0,
+      totalRP: 0,
+      avgRPPerMatch: 0
+    };
+
+    const coopRP = matches.filter(m => {
+      // At least 2 Algae scored in each Processor
+      const autonProcessor = parseInt(m["Auton-Algae-Processor"]) || 0;
+      const teleopProcessor = parseInt(m["Teleop-Algae-Processor"]) || 0;
+      return autonProcessor >= 2 && teleopProcessor >= 2;
+    }).length;
+
+    const autoRP = matches.filter(m => {
+      // At least 1 Coral scored in Auto
+      const autoCorals = (parseInt(m["Auton-Coral-L1"]) || 0) +
+                        (parseInt(m["Auton-Coral-L2"]) || 0) +
+                        (parseInt(m["Auton-Coral-L3"]) || 0) +
+                        (parseInt(m["Auton-Coral-L4"]) || 0);
+      return autoCorals > 0;
+    }).length;
+
+    const coralRP = matches.filter(m => {
+      // At least 3 Coral scored per level
+      const l1Total = (parseInt(m["Auton-Coral-L1"]) || 0) + (parseInt(m["Teleop-Coral-L1"]) || 0);
+      const l2Total = (parseInt(m["Auton-Coral-L2"]) || 0) + (parseInt(m["Teleop-Coral-L2"]) || 0);
+      const l3Total = (parseInt(m["Auton-Coral-L3"]) || 0) + (parseInt(m["Teleop-Coral-L3"]) || 0);
+      const l4Total = (parseInt(m["Auton-Coral-L4"]) || 0) + (parseInt(m["Teleop-Coral-L4"]) || 0);
+      return l1Total >= 3 && l2Total >= 3 && l3Total >= 3 && l4Total >= 3;
+    }).length;
+
+    const bargeRP = matches.filter(m => {
+      // At least 14 Barge points
+      const bargePoints = ((parseInt(m["Auton-Algae-Net"]) || 0) + 
+                          (parseInt(m["Teleop-Algae-Net"]) || 0)) * 4;
+      return bargePoints >= 14;
+    }).length;
+
+    const totalRP = coopRP + autoRP + coralRP + bargeRP;
+    const avgRPPerMatch = totalRP / matches.length;
+
+    return {
+      coopRP,
+      autoRP,
+      coralRP,
+      bargeRP,
+      totalRP,
+      avgRPPerMatch
+    };
   };
 
   return (
@@ -435,133 +501,151 @@ export default function TeamPage() {
           </Card>
         </div>
 
-        {/* Match History Table */}
+        {/* RP Statistics */}
+        <Card className="bg-[#1A1A1A] border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white">Ranking Point Analysis</CardTitle>
+            <CardDescription className="text-gray-400">Performance in achieving ranking points</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {teamData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">RP Achievement</h3>
+                  <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Coopertition RP</span>
+                      <span className="text-white font-medium">{calculateRPStats(teamData).coopRP}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Auto RP</span>
+                      <span className="text-white font-medium">{calculateRPStats(teamData).autoRP}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Coral RP</span>
+                      <span className="text-white font-medium">{calculateRPStats(teamData).coralRP}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Barge RP</span>
+                      <span className="text-white font-medium">{calculateRPStats(teamData).bargeRP}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">RP Statistics</h3>
+                  <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Total RPs</span>
+                      <span className="text-white font-medium">{calculateRPStats(teamData).totalRP}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Average RP/Match</span>
+                      <span className="text-white font-medium">
+                        {calculateRPStats(teamData).avgRPPerMatch.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                Enter a team number to view RP statistics
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Match History Table - Modified to remove extra scrollbar */}
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
             <CardTitle className="text-white">Match History</CardTitle>
             <CardDescription className="text-gray-400">Detailed match data</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="relative w-full rounded-lg border border-gray-800">
-              <style jsx global>{`
-                .table-scroll-container {
-                  overflow-x: scroll;
-                  min-width: 100%;
-                }
-                
-                .table-scroll-container::-webkit-scrollbar {
-                  -webkit-appearance: none;
-                  height: 16px;
-                }
-                
-                .table-scroll-container::-webkit-scrollbar-track {
-                  background: #1A1A1A;
-                  border-radius: 8px;
-                  border: 1px solid #374151;
-                }
-                
-                .table-scroll-container::-webkit-scrollbar-thumb {
-                  background-color: #4B5563;
-                  border-radius: 8px;
-                  border: 3px solid #1A1A1A;
-                }
-                
-                .table-scroll-container::-webkit-scrollbar-thumb:hover {
-                  background-color: #6B7280;
-                }
-
-                /* Firefox */
-                .table-scroll-container {
-                  scrollbar-width: auto;
-                  scrollbar-color: #4B5563 #1A1A1A;
-                }
-              `}</style>
-              <div className="table-scroll-container">
-                <div className="min-w-[2000px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-gray-800">
-                        <TableHead className="text-gray-300">Scouter</TableHead>
-                        <TableHead className="text-gray-300">Event</TableHead>
-                        <TableHead className="text-gray-300">Match Level</TableHead>
-                        <TableHead className="text-gray-300">Match Number</TableHead>
-                        <TableHead className="text-gray-300">Robot</TableHead>
-                        <TableHead className="text-gray-300">Team Number</TableHead>
-                        <TableHead className="text-gray-300">Auton Position</TableHead>
-                        <TableHead className="text-gray-300">Auton Leave Start</TableHead>
-                        <TableHead className="text-gray-300">Auton L4</TableHead>
-                        <TableHead className="text-gray-300">Auton L3</TableHead>
-                        <TableHead className="text-gray-300">Auton L2</TableHead>
-                        <TableHead className="text-gray-300">Auton L1</TableHead>
-                        <TableHead className="text-gray-300">Algae Removed from Reef</TableHead>
-                        <TableHead className="text-gray-300">Auton Algae Processor</TableHead>
-                        <TableHead className="text-gray-300">Auton Algae Net</TableHead>
-                        <TableHead className="text-gray-300">Teleop L4</TableHead>
-                        <TableHead className="text-gray-300">Teleop L3</TableHead>
-                        <TableHead className="text-gray-300">Teleop L2</TableHead>
-                        <TableHead className="text-gray-300">Teleop L1</TableHead>
-                        <TableHead className="text-gray-300">Teleop Removed from Reef</TableHead>
-                        <TableHead className="text-gray-300">Teleop Algae Processor</TableHead>
-                        <TableHead className="text-gray-300">Teleop Algae Net</TableHead>
-                        <TableHead className="text-gray-300">Defense Played</TableHead>
-                        <TableHead className="text-gray-300">Ground Pickup</TableHead>
-                        <TableHead className="text-gray-300">Climb Status</TableHead>
-                        <TableHead className="text-gray-300">No Climb Reason</TableHead>
-                        <TableHead className="text-gray-300">Driver Skill</TableHead>
-                        <TableHead className="text-gray-300">Defense Rating</TableHead>
-                        <TableHead className="text-gray-300">Died</TableHead>
-                        <TableHead className="text-gray-300">Tipped</TableHead>
-                        <TableHead className="text-gray-300 min-w-[200px]">Comments</TableHead>
+            <div className="table-scroll-container">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-800">
+                    <TableHead className="text-gray-300">Scouter</TableHead>
+                    <TableHead className="text-gray-300">Event</TableHead>
+                    <TableHead className="text-gray-300">Match Level</TableHead>
+                    <TableHead className="text-gray-300">Match Number</TableHead>
+                    <TableHead className="text-gray-300">Robot</TableHead>
+                    <TableHead className="text-gray-300">Team Number</TableHead>
+                    <TableHead className="text-gray-300">Auton Position</TableHead>
+                    <TableHead className="text-gray-300">Auton Leave Start</TableHead>
+                    <TableHead className="text-gray-300">Auton L4</TableHead>
+                    <TableHead className="text-gray-300">Auton L3</TableHead>
+                    <TableHead className="text-gray-300">Auton L2</TableHead>
+                    <TableHead className="text-gray-300">Auton L1</TableHead>
+                    <TableHead className="text-gray-300">Algae Removed from Reef</TableHead>
+                    <TableHead className="text-gray-300">Auton Algae Processor</TableHead>
+                    <TableHead className="text-gray-300">Auton Algae Net</TableHead>
+                    <TableHead className="text-gray-300">Teleop L4</TableHead>
+                    <TableHead className="text-gray-300">Teleop L3</TableHead>
+                    <TableHead className="text-gray-300">Teleop L2</TableHead>
+                    <TableHead className="text-gray-300">Teleop L1</TableHead>
+                    <TableHead className="text-gray-300">Teleop Removed from Reef</TableHead>
+                    <TableHead className="text-gray-300">Teleop Algae Processor</TableHead>
+                    <TableHead className="text-gray-300">Teleop Algae Net</TableHead>
+                    <TableHead className="text-gray-300">Defense Played</TableHead>
+                    <TableHead className="text-gray-300">Ground Pickup</TableHead>
+                    <TableHead className="text-gray-300">Climb Status</TableHead>
+                    <TableHead className="text-gray-300">No Climb Reason</TableHead>
+                    <TableHead className="text-gray-300">Driver Skill</TableHead>
+                    <TableHead className="text-gray-300">Defense Rating</TableHead>
+                    <TableHead className="text-gray-300">Died</TableHead>
+                    <TableHead className="text-gray-300">Tipped</TableHead>
+                    <TableHead className="text-gray-300 min-w-[200px]">Comments</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {teamData ? (
+                    teamData.map((match, index) => (
+                      <TableRow key={index} className="border-gray-800">
+                        <TableCell className="text-gray-300">{match.Scouter}</TableCell>
+                        <TableCell className="text-gray-300">{match.Event}</TableCell>
+                        <TableCell className="text-gray-300">{match["Match-Level"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Match-Number"]}</TableCell>
+                        <TableCell className="text-gray-300">{match.Robot.startsWith('r') ? '🔴 Red' : '🔵 Blue'} {match.Robot}</TableCell>
+                        <TableCell className="text-gray-300">{match["Team-Number"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Position"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Leave-Start"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Coral-L4"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Coral-L3"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Coral-L2"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Coral-L1"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Algae-Removed- from-Reef"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Algae-Processor"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Auton-Algae-Net"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Teleop-Coral-L4"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Teleop-Coral-L3"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Teleop-Coral-L2"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Teleop-Coral-L1"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["TeleOp-Removed- from-Reef"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Teleop-Algae-Processor"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Teleop-Algae-Net"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Defense-Played-on-Robot"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Ground-Pick-Up"]}</TableCell>
+                        <TableCell className="text-gray-300">{getClimbStatus(match["Climb-Status"])}</TableCell>
+                        <TableCell className="text-gray-300">{match["No-Climb-Reason"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Driver-Skill"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Defense-Rating"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Died-YN"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Tipped-YN"]}</TableCell>
+                        <TableCell className="text-gray-300 min-w-[200px]">{match.Comments}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {teamData ? (
-                        teamData.map((match, index) => (
-                          <TableRow key={index} className="border-gray-800">
-                            <TableCell className="text-gray-300">{match.Scouter}</TableCell>
-                            <TableCell className="text-gray-300">{match.Event}</TableCell>
-                            <TableCell className="text-gray-300">{match["Match-Level"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Match-Number"]}</TableCell>
-                            <TableCell className="text-gray-300">{match.Robot.startsWith('r') ? '🔴 Red' : '🔵 Blue'} {match.Robot}</TableCell>
-                            <TableCell className="text-gray-300">{match["Team-Number"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Position"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Leave-Start"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Coral-L4"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Coral-L3"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Coral-L2"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Coral-L1"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Algae-Removed- from-Reef"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Algae-Processor"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Auton-Algae-Net"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Teleop-Coral-L4"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Teleop-Coral-L3"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Teleop-Coral-L2"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Teleop-Coral-L1"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["TeleOp-Removed- from-Reef"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Teleop-Algae-Processor"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Teleop-Algae-Net"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Defense-Played-on-Robot"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Ground-Pick-Up"]}</TableCell>
-                            <TableCell className="text-gray-300">{getClimbStatus(match["Climb-Status"])}</TableCell>
-                            <TableCell className="text-gray-300">{match["No-Climb-Reason"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Driver-Skill"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Defense-Rating"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Died-YN"]}</TableCell>
-                            <TableCell className="text-gray-300">{match["Tipped-YN"]}</TableCell>
-                            <TableCell className="text-gray-300 min-w-[200px]">{match.Comments}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow className="border-gray-800">
-                          <TableCell colSpan={31} className="text-center py-4 text-gray-400">
-                            Enter a team number to view match data
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
+                    ))
+                  ) : (
+                    <TableRow className="border-gray-800">
+                      <TableCell colSpan={31} className="text-center py-4 text-gray-400">
+                        Enter a team number to view match data
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
