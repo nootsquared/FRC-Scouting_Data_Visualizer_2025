@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Key, Calendar } from "lucide-react";
 import { TBAMatch } from '@/types/tba';
+import Link from "next/link";
+import { useAppContext } from "@/lib/context/AppContext";
+import { useRouter } from "next/navigation";
 
 const TBA_API_BASE = 'https://www.thebluealliance.com/api/v3';
 
@@ -24,8 +27,10 @@ interface ConsolidatedMatch {
 }
 
 export default function TargetedPlanningPage() {
+  const router = useRouter();
+  const { setTeamNumber: setGlobalTeamNumber } = useAppContext();
   const [teamNumber, setTeamNumber] = useState("226");
-  const [eventCode, setEventCode] = useState("2024onosh"); // Default to Oshawa event
+  const [eventCode, setEventCode] = useState("");
   const [tbaKey, setTbaKey] = useState("");
   const [matches, setMatches] = useState<TBAMatch[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<TBAMatch[]>([]);
@@ -35,13 +40,37 @@ export default function TargetedPlanningPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Store TBA key in localStorage
+  // Load saved values from localStorage
   useEffect(() => {
     const savedKey = localStorage.getItem('tbaKey');
-    if (savedKey) {
-      setTbaKey(savedKey);
+    const savedEventCode = localStorage.getItem('eventCode');
+    const savedMatches = localStorage.getItem('tbaMatches');
+    const savedUpcomingMatches = localStorage.getItem('tbaUpcomingMatches');
+    const savedSelectedMatch = localStorage.getItem('tbaSelectedMatch');
+    const savedMatchesToScout = localStorage.getItem('tbaMatchesToScout');
+    const savedConsolidatedMatches = localStorage.getItem('tbaConsolidatedMatches');
+
+    if (savedKey) setTbaKey(savedKey);
+    if (savedEventCode) {
+      setEventCode(savedEventCode);
+    } else {
+      setEventCode("2024onosh");
     }
+    if (savedMatches) setMatches(JSON.parse(savedMatches));
+    if (savedUpcomingMatches) setUpcomingMatches(JSON.parse(savedUpcomingMatches));
+    if (savedSelectedMatch) setSelectedMatch(JSON.parse(savedSelectedMatch));
+    if (savedMatchesToScout) setMatchesToScout(JSON.parse(savedMatchesToScout));
+    if (savedConsolidatedMatches) setConsolidatedMatches(JSON.parse(savedConsolidatedMatches));
   }, []);
+
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    if (matches.length > 0) localStorage.setItem('tbaMatches', JSON.stringify(matches));
+    if (upcomingMatches.length > 0) localStorage.setItem('tbaUpcomingMatches', JSON.stringify(upcomingMatches));
+    if (selectedMatch) localStorage.setItem('tbaSelectedMatch', JSON.stringify(selectedMatch));
+    if (matchesToScout.length > 0) localStorage.setItem('tbaMatchesToScout', JSON.stringify(matchesToScout));
+    if (consolidatedMatches.length > 0) localStorage.setItem('tbaConsolidatedMatches', JSON.stringify(consolidatedMatches));
+  }, [matches, upcomingMatches, selectedMatch, matchesToScout, consolidatedMatches]);
 
   const fetchMatches = async () => {
     if (!tbaKey) {
@@ -217,6 +246,26 @@ export default function TargetedPlanningPage() {
     fetchMatches();
   };
 
+  const handleEventCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEventCode = e.target.value;
+    setEventCode(newEventCode);
+    localStorage.setItem('eventCode', newEventCode);
+  };
+
+  const handleTeamClick = (teamNum: string) => {
+    setGlobalTeamNumber(teamNum);
+    router.push(`/dashboard/team`);
+  };
+
+  const TeamLink = ({ teamNumber }: { teamNumber: string }) => (
+    <button
+      onClick={() => handleTeamClick(teamNumber)}
+      className="text-blue-400 hover:text-blue-300 hover:underline"
+    >
+      {teamNumber}
+    </button>
+  );
+
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -262,7 +311,7 @@ export default function TargetedPlanningPage() {
                 <Input
                   placeholder="Enter Event Code (e.g., 2024onosh)"
                   value={eventCode}
-                  onChange={(e) => setEventCode(e.target.value)}
+                  onChange={handleEventCodeChange}
                   className="w-[300px] pl-10 bg-[#1A1A1A] border-gray-800 text-white placeholder-gray-400"
                 />
               </div>
@@ -345,7 +394,12 @@ export default function TargetedPlanningPage() {
                           {formatMatchTime(match.predicted_time || match.time)}
                         </TableCell>
                         <TableCell className="text-gray-300">
-                          {teamsToScout.join(', ')}
+                          {teamsToScout.map((team, idx) => (
+                            <>
+                              <TeamLink key={team} teamNumber={team} />
+                              {idx < teamsToScout.length - 1 ? ', ' : ''}
+                            </>
+                          ))}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -384,7 +438,7 @@ export default function TargetedPlanningPage() {
                     <div className="text-gray-300 space-y-1">
                       {teams.map(team => (
                         <div key={team} className="text-sm">
-                          {team}
+                          <TeamLink teamNumber={team} />
                         </div>
                       ))}
                     </div>

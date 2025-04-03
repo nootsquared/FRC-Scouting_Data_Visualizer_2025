@@ -98,39 +98,45 @@ export default function TeamPage() {
   } = useAppContext();
 
   const [dataSource, setDataSource] = useState<DataSource>("live");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Add a handler for data source changes
-  const handleDataSourceChange = (source: DataSource) => {
-    setDataSource(source);
-    // If we already have a team number, update the data immediately
+  // Effect to update data when data source, processing mode, or zero handling changes
+  useEffect(() => {
     if (teamNumber && teamNumber.trim() !== '') {
-      const data = getTeamData(parseInt(teamNumber), source);
+      updateTeamData();
+    }
+  }, [dataSource, processingMode, zeroHandling]);
+
+  const updateTeamData = () => {
+    setIsLoading(true);
+    try {
+      const data = getTeamData(parseInt(teamNumber), dataSource);
+      const pit = getTeamPitData(parseInt(teamNumber));
       setTeamData(data);
+      setPitData(pit);
       setTeamAverages(calculateTeamAverages(data, processingMode, zeroHandling));
+    } catch (error) {
+      console.error('Error updating team data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = getTeamData(parseInt(teamNumber), dataSource);
-    const pit = getTeamPitData(parseInt(teamNumber));
-    setTeamData(data);
-    setPitData(pit);
-    setTeamAverages(calculateTeamAverages(data, processingMode, zeroHandling));
+    updateTeamData();
+  };
+
+  const handleDataSourceChange = (newSource: DataSource) => {
+    setDataSource(newSource);
   };
 
   const handleModeChange = (mode: ProcessingMode) => {
     setProcessingMode(mode);
-    if (teamData) {
-      setTeamAverages(calculateTeamAverages(teamData, mode, zeroHandling));
-    }
   };
 
   const handleZeroHandlingChange = (handling: ZeroHandling) => {
     setZeroHandling(handling);
-    if (teamData) {
-      setTeamAverages(calculateTeamAverages(teamData, processingMode, handling));
-    }
   };
 
   const prepareCoralData = (matches: MatchData[], phase: 'Auton' | 'Teleop') => {
@@ -231,37 +237,50 @@ export default function TeamPage() {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-12">
-        {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
+            <p className="text-gray-400 mt-2">Analyze performance metrics for a specific team</p>
+          </div>
           <DataSourceSelector
             currentSource={dataSource}
             onSourceChange={handleDataSourceChange}
           />
-          <form onSubmit={handleSubmit} className="flex gap-4 items-center">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <Input
-                id="teamNumber"
-                placeholder="Enter Team Number"
-                value={teamNumber}
-                onChange={(e) => setTeamNumber(e.target.value)}
-                className="w-[200px] pl-10 bg-[#1A1A1A] border-gray-800 text-white placeholder-gray-400"
-              />
-            </div>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Search</Button>
-          </form>
         </div>
 
-        {/* Data Processing Controls */}
-        <div className="mb-12">
-          <DataProcessingControls
-            onModeChange={handleModeChange}
-            onZeroHandlingChange={handleZeroHandlingChange}
-            currentMode={processingMode}
-            currentZeroHandling={zeroHandling}
+        <form onSubmit={handleSubmit} className="flex gap-4 items-center">
+          <Input
+            type="number"
+            placeholder="Enter team number..."
+            value={teamNumber}
+            onChange={(e) => setTeamNumber(e.target.value)}
+            className="max-w-[200px] bg-[#1A1A1A] border-gray-800 text-white"
           />
-        </div>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                Loading...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <SearchIcon className="w-4 h-4" />
+                Search
+              </span>
+            )}
+          </Button>
+        </form>
+
+        <DataProcessingControls
+          onModeChange={handleModeChange}
+          onZeroHandlingChange={handleZeroHandlingChange}
+          currentMode={processingMode}
+          currentZeroHandling={zeroHandling}
+        />
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

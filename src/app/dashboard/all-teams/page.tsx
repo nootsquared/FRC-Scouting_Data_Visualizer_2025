@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -28,17 +28,48 @@ export default function AllTeamsPage() {
   } = useAppContext();
 
   const [dataSource, setDataSource] = useState<DataSource>("live");
+  const [rankings, setRankings] = useState<any[]>([]);
 
-  // Get rankings based on the current data source
-  const rankings = getAllTeamsRankings(processingMode, zeroHandling, dataSource);
+  // Update rankings when data source, processing mode, or zero handling changes
+  useEffect(() => {
+    const updatedRankings = getAllTeamsRankings(processingMode, zeroHandling, dataSource);
+    setRankings(updatedRankings);
+  }, [dataSource, processingMode, zeroHandling]);
 
-  // Sort rankings based on the selected metric
-  const sortedRankings = [...rankings].sort((a, b) => {
-    if (rankingMetric === "epa") {
-      return b.totalEPA - a.totalEPA;
+  // Sort rankings based on the selected metric and prepare data for stacked bar chart
+  const chartData = [...rankings]
+    .sort((a, b) => {
+      if (rankingMetric === "epa") {
+        return b.totalEPA - a.totalEPA;
+      }
+      return b.totalCoral - a.totalCoral;
+    })
+    .map(team => ({
+      team: team.teamNumber,
+      Autonomous: team.autonEPA,
+      Teleop: team.teleopEPA,
+      total: team.totalEPA,
+    }));
+
+  // Custom tooltip for the stacked bar chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-3">
+          <p className="text-white font-medium">Team {label}</p>
+          {payload.map((entry: any) => (
+            <p key={entry.name} style={{ color: entry.color }}>
+              {entry.name}: {entry.value.toFixed(2)}
+            </p>
+          ))}
+          <p className="text-white mt-1 border-t border-gray-800 pt-1">
+            Total EPA: {payload.reduce((sum: number, entry: any) => sum + entry.value, 0).toFixed(2)}
+          </p>
+        </div>
+      );
     }
-    return b.totalCoral - a.totalCoral;
-  });
+    return null;
+  };
 
   const sortedAutonRankings = [...rankings].sort((a, b) => {
     if (rankingMetric === "epa") {
@@ -58,6 +89,11 @@ export default function AllTeamsPage() {
     return bTotal - aTotal;
   });
 
+  // Handle data source changes
+  const handleDataSourceChange = (newSource: DataSource) => {
+    setDataSource(newSource);
+  };
+
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -68,7 +104,7 @@ export default function AllTeamsPage() {
           </div>
           <DataSourceSelector
             currentSource={dataSource}
-            onSourceChange={setDataSource}
+            onSourceChange={handleDataSourceChange}
           />
         </div>
 
@@ -81,6 +117,35 @@ export default function AllTeamsPage() {
           currentRankingMetric={rankingMetric}
         />
 
+        {/* EPA Rankings Chart */}
+        <Card className="bg-[#1A1A1A] border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">EPA Rankings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[600px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis 
+                    dataKey="team" 
+                    stroke="#9CA3AF"
+                    label={{ value: 'Team Number', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    label={{ value: 'EPA Points', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar dataKey="Autonomous" stackId="a" fill="#60A5FA" />
+                  <Bar dataKey="Teleop" stackId="a" fill="#34D399" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="space-y-6">
           {/* Total Points Ranking */}
           <Card className="bg-[#1A1A1A] border-gray-800">
@@ -90,7 +155,7 @@ export default function AllTeamsPage() {
             <CardContent className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={sortedRankings}
+                  data={rankings}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

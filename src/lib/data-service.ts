@@ -34,6 +34,40 @@ export interface EndgameData {
   climbScore: number;
 }
 
+// Raw data from JSON file
+interface RawMatchData {
+  Scouter: string;
+  Event: string;
+  "Match-Level": string;
+  "Match-Number": string;
+  Robot: string;
+  "Team-Number": string;
+  "Auton-Position": string;
+  "Auton-Leave-Start": string;
+  "Auton-Coral-L4": string;
+  "Auton-Coral-L3": string;
+  "Auton-Coral-L2": string;
+  "Auton-Coral-L1": string;
+  "Algae-Removed- from-Reef": string;
+  "Auton-Algae-Processor": string;
+  "Auton-Algae-Net": string;
+  "Teleop-Coral-L4": string;
+  "Teleop-Coral-L3": string;
+  "Teleop-Coral-L2": string;
+  "Teleop-Coral-L1": string;
+  "TeleOp-Removed- from-Reef": string;
+  "Teleop-Algae-Processor": string;
+  "Teleop-Algae-Net": string;
+  "Defense-Played-on-Robot": string;
+  "Climb Score"?: string;
+  "Driver Skill"?: string;
+  "Defense Rating"?: string;
+  "Died"?: string;
+  "Tippy"?: string;
+  Comments: string;
+  [key: string]: string | undefined;
+}
+
 export interface MatchData {
   Scouter: string;
   Event: string;
@@ -66,11 +100,11 @@ export interface MatchData {
   "Died-YN": string;
   "Tipped-YN": string;
   Comments: string;
-  [key: string]: string; // Allow for additional properties
+  [key: string]: string;
 }
 
 export interface ScoutingData {
-  matches: MatchData[];
+  matches: RawMatchData[];
 }
 
 export function getMatchData(dataSource: DataSource = "live"): MatchData[] {
@@ -81,8 +115,56 @@ export function getMatchData(dataSource: DataSource = "live"): MatchData[] {
 export function getTeamData(teamNumber: number, dataSource: DataSource = "live"): MatchData[] {
   const data = dataSource === "live" ? scoutingData : preScoutingData;
   return data.matches.filter(
-    (match) => parseInt(match["Team-Number"]) === teamNumber
-  ) as MatchData[];
+    (match) => match["Team-Number"] && parseInt(match["Team-Number"]) === teamNumber
+  ).map(match => {
+    // Create a new object with all required fields
+    const converted = {
+      Scouter: match.Scouter || '',
+      Event: match.Event || '',
+      "Match-Level": match["Match-Level"] || '',
+      "Match-Number": match["Match-Number"] || '',
+      Robot: match.Robot || '',
+      "Team-Number": match["Team-Number"] || '',
+      "Auton-Position": match["Auton-Position"] || '',
+      "Auton-Leave-Start": match["Auton-Leave-Start"] || '',
+      "Auton-Coral-L4": match["Auton-Coral-L4"] || '',
+      "Auton-Coral-L3": match["Auton-Coral-L3"] || '',
+      "Auton-Coral-L2": match["Auton-Coral-L2"] || '',
+      "Auton-Coral-L1": match["Auton-Coral-L1"] || '',
+      "Algae-Removed- from-Reef": match["Algae-Removed- from-Reef"] || '',
+      "Auton-Algae-Processor": match["Auton-Algae-Processor"] || '',
+      "Auton-Algae-Net": match["Auton-Algae-Net"] || '',
+      "Teleop-Coral-L4": match["Teleop-Coral-L4"] || '',
+      "Teleop-Coral-L3": match["Teleop-Coral-L3"] || '',
+      "Teleop-Coral-L2": match["Teleop-Coral-L2"] || '',
+      "Teleop-Coral-L1": match["Teleop-Coral-L1"] || '',
+      "TeleOp-Removed- from-Reef": match["TeleOp-Removed- from-Reef"] || '',
+      "Teleop-Algae-Processor": match["Teleop-Algae-Processor"] || '',
+      "Teleop-Algae-Net": match["Teleop-Algae-Net"] || '',
+      "Defense-Played-on-Robot": match["Defense-Played-on-Robot"] || '',
+      "Ground-Pick-Up": 'n',
+      "Climb-Status": match["Climb Score"] ? 
+        (parseInt(match["Climb Score"]) >= 12 ? 'd' : 
+         parseInt(match["Climb Score"]) >= 8 ? 's' : 
+         parseInt(match["Climb Score"]) > 0 ? 'p' : 'n') : 
+        'n',
+      "No-Climb-Reason": '',
+      "Driver-Skill": match["Driver Skill"] ? 
+        (parseInt(match["Driver Skill"]) >= 4 ? 'e' :
+         parseInt(match["Driver Skill"]) >= 3 ? 'g' :
+         parseInt(match["Driver Skill"]) >= 2 ? 'f' : 'p') :
+        'p',
+      "Defense-Rating": match["Defense Rating"] ?
+        (parseInt(match["Defense Rating"]) >= 4 ? 'e' :
+         parseInt(match["Defense Rating"]) >= 3 ? 'g' :
+         parseInt(match["Defense Rating"]) >= 2 ? 'f' : 'p') :
+        'p',
+      "Died-YN": match["Died"] || 'n',
+      "Tipped-YN": match["Tippy"] || '0',
+      Comments: match.Comments || ''
+    };
+    return converted as MatchData;
+  });
 }
 
 export function processMatches(
