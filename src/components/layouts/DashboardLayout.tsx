@@ -34,7 +34,7 @@ const sidebarNavItems = [
   },
   {
     title: "Data Import",
-    href: "/dashboard/import",
+    href: "/data-import",
     icon: FolderOpen,
   },
 ];

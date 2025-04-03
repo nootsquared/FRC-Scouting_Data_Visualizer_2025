@@ -35,6 +35,7 @@ import { DataProcessingControls, ProcessingMode, ZeroHandling } from "@/componen
 import { getTeamPitData, type PitData } from "@/lib/pit-data-service";
 import { useAppContext } from "@/lib/context/AppContext";
 import { SearchIcon } from "lucide-react";
+import { DataSourceSelector, type DataSource } from "@/components/ui/data-source-selector";
 
 // Icons
 import { 
@@ -96,9 +97,11 @@ export default function TeamPage() {
     setZeroHandling
   } = useAppContext();
 
+  const [dataSource, setDataSource] = useState<DataSource>("live");
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = getTeamData(parseInt(teamNumber));
+    const data = getTeamData(parseInt(teamNumber), dataSource);
     const pit = getTeamPitData(parseInt(teamNumber));
     setTeamData(data);
     setPitData(pit);
@@ -220,6 +223,10 @@ export default function TeamPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
+          <DataSourceSelector
+            currentSource={dataSource}
+            onSourceChange={setDataSource}
+          />
           <form onSubmit={handleSubmit} className="flex gap-4 items-center">
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />

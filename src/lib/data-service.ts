@@ -1,5 +1,7 @@
 import scoutingData from '@/data/scouting-data.json';
+import preScoutingData from '@/data/scouting-data-pre.json';
 import { ProcessingMode, ZeroHandling } from '@/components/ui/data-processing-controls';
+import { DataSource } from '@/components/ui/data-source-selector';
 
 export interface CoralScoring {
   l1: number;
@@ -70,8 +72,9 @@ export interface ScoutingData {
   matches: MatchData[];
 }
 
-export function getTeamData(teamNumber: number): MatchData[] {
-  return scoutingData.matches.filter(
+export function getTeamData(teamNumber: number, dataSource: DataSource = "live"): MatchData[] {
+  const data = dataSource === "live" ? scoutingData : preScoutingData;
+  return data.matches.filter(
     (match) => parseInt(match["Team-Number"]) === teamNumber
   );
 }
