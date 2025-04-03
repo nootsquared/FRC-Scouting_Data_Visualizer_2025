@@ -1,6 +1,8 @@
 import scoutingData from '@/data/scouting-data.json';
+import preScoutingData from '@/data/scouting-data-pre.json';
 import { ProcessingMode, ZeroHandling } from '@/components/ui/data-processing-controls';
-import { MatchData } from './data-service';
+import { MatchData, getMatchData } from './data-service';
+import { DataSource } from '@/components/ui/data-source-selector';
 
 interface TeamRankingData {
   teamNumber: string;
@@ -124,12 +126,16 @@ const calculateTeamMetrics = (
 
 export function getAllTeamsRankings(
   mode: ProcessingMode,
-  zeroHandling: ZeroHandling
+  zeroHandling: ZeroHandling,
+  dataSource: DataSource = "live"
 ): TeamRankingData[] {
+  // Get match data from the appropriate source
+  const matchData = getMatchData(dataSource);
+  
   // Group matches by team
   const teamMatches = new Map<string, MatchData[]>();
   
-  scoutingData.matches.forEach(match => {
+  matchData.forEach(match => {
     const teamNumber = match["Team-Number"];
     if (!teamMatches.has(teamNumber)) {
       teamMatches.set(teamNumber, []);

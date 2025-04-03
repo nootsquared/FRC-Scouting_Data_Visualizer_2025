@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -14,6 +15,7 @@ import {
 import { AllTeamsDataControls } from "@/components/ui/all-teams-data-controls";
 import { getAllTeamsRankings } from "@/lib/all-teams-service";
 import { useAppContext } from "@/lib/context/AppContext";
+import { DataSourceSelector, type DataSource } from "@/components/ui/data-source-selector";
 
 export default function AllTeamsPage() {
   const {
@@ -25,7 +27,10 @@ export default function AllTeamsPage() {
     setRankingMetric
   } = useAppContext();
 
-  const rankings = getAllTeamsRankings(processingMode, zeroHandling);
+  const [dataSource, setDataSource] = useState<DataSource>("live");
+
+  // Get rankings based on the current data source
+  const rankings = getAllTeamsRankings(processingMode, zeroHandling, dataSource);
 
   // Sort rankings based on the selected metric
   const sortedRankings = [...rankings].sort((a, b) => {
@@ -56,9 +61,15 @@ export default function AllTeamsPage() {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-12">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-white">All Teams Analysis</h1>
-          <p className="text-gray-400 mt-2">Compare performance metrics across all teams</p>
+        <div className="flex justify-between items-center">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-white">All Teams Analysis</h1>
+            <p className="text-gray-400 mt-2">Compare performance metrics across all teams</p>
+          </div>
+          <DataSourceSelector
+            currentSource={dataSource}
+            onSourceChange={setDataSource}
+          />
         </div>
 
         <AllTeamsDataControls

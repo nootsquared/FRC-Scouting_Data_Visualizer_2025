@@ -66,17 +66,108 @@ export interface MatchData {
   "Died-YN": string;
   "Tipped-YN": string;
   Comments: string;
+  [key: string]: string; // Allow for additional properties
 }
 
 export interface ScoutingData {
   matches: MatchData[];
 }
 
+export function getMatchData(dataSource: DataSource = "live"): MatchData[] {
+  const data = dataSource === "live" ? scoutingData : preScoutingData;
+  return data.matches as MatchData[];
+}
+
 export function getTeamData(teamNumber: number, dataSource: DataSource = "live"): MatchData[] {
   const data = dataSource === "live" ? scoutingData : preScoutingData;
   return data.matches.filter(
     (match) => parseInt(match["Team-Number"]) === teamNumber
-  );
+  ) as MatchData[];
+}
+
+export function processMatches(
+  matches: MatchData[],
+  mode: ProcessingMode = "average",
+  zeroHandling: ZeroHandling = "include"
+): MatchData[] {
+  return matches;
+}
+
+export function calculateEPA(
+  match: MatchData,
+  isAutonomous: boolean = false
+): number {
+  if (isAutonomous) {
+    const l1 = parseInt(match["Auton-Coral-L1"]) || 0;
+    const l2 = parseInt(match["Auton-Coral-L2"]) || 0;
+    const l3 = parseInt(match["Auton-Coral-L3"]) || 0;
+    const l4 = parseInt(match["Auton-Coral-L4"]) || 0;
+    const processor = parseInt(match["Auton-Algae-Processor"]) || 0;
+    const net = parseInt(match["Auton-Algae-Net"]) || 0;
+    
+    return (
+      l1 * 3 +
+      l2 * 4 +
+      l3 * 6 +
+      l4 * 7 +
+      processor * 6 +
+      net * 4
+    );
+  } else {
+    const l1 = parseInt(match["Teleop-Coral-L1"]) || 0;
+    const l2 = parseInt(match["Teleop-Coral-L2"]) || 0;
+    const l3 = parseInt(match["Teleop-Coral-L3"]) || 0;
+    const l4 = parseInt(match["Teleop-Coral-L4"]) || 0;
+    const processor = parseInt(match["Teleop-Algae-Processor"]) || 0;
+    const net = parseInt(match["Teleop-Algae-Net"]) || 0;
+    
+    return (
+      l1 * 2 +
+      l2 * 3 +
+      l3 * 4 +
+      l4 * 5 +
+      processor * 6 +
+      net * 4
+    );
+  }
+}
+
+export function calculateCoral(
+  match: MatchData,
+  isAutonomous: boolean = false
+): number {
+  if (isAutonomous) {
+    const l1 = parseInt(match["Auton-Coral-L1"]) || 0;
+    const l2 = parseInt(match["Auton-Coral-L2"]) || 0;
+    const l3 = parseInt(match["Auton-Coral-L3"]) || 0;
+    const l4 = parseInt(match["Auton-Coral-L4"]) || 0;
+    
+    return l1 + l2 + l3 + l4;
+  } else {
+    const l1 = parseInt(match["Teleop-Coral-L1"]) || 0;
+    const l2 = parseInt(match["Teleop-Coral-L2"]) || 0;
+    const l3 = parseInt(match["Teleop-Coral-L3"]) || 0;
+    const l4 = parseInt(match["Teleop-Coral-L4"]) || 0;
+    
+    return l1 + l2 + l3 + l4;
+  }
+}
+
+export function calculateAlgae(
+  match: MatchData,
+  isAutonomous: boolean = false
+): number {
+  if (isAutonomous) {
+    const processor = parseInt(match["Auton-Algae-Processor"]) || 0;
+    const net = parseInt(match["Auton-Algae-Net"]) || 0;
+    
+    return processor + net;
+  } else {
+    const processor = parseInt(match["Teleop-Algae-Processor"]) || 0;
+    const net = parseInt(match["Teleop-Algae-Net"]) || 0;
+    
+    return processor + net;
+  }
 }
 
 export function calculateTeamAverages(

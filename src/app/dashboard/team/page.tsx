@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -98,6 +98,17 @@ export default function TeamPage() {
   } = useAppContext();
 
   const [dataSource, setDataSource] = useState<DataSource>("live");
+
+  // Add a handler for data source changes
+  const handleDataSourceChange = (source: DataSource) => {
+    setDataSource(source);
+    // If we already have a team number, update the data immediately
+    if (teamNumber && teamNumber.trim() !== '') {
+      const data = getTeamData(parseInt(teamNumber), source);
+      setTeamData(data);
+      setTeamAverages(calculateTeamAverages(data, processingMode, zeroHandling));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -225,7 +236,7 @@ export default function TeamPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
           <DataSourceSelector
             currentSource={dataSource}
-            onSourceChange={setDataSource}
+            onSourceChange={handleDataSourceChange}
           />
           <form onSubmit={handleSubmit} className="flex gap-4 items-center">
             <div className="relative">
