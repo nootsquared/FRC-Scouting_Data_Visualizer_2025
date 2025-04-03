@@ -13,7 +13,8 @@ import {
   FileCode2, 
   Settings, 
   HelpCircle, 
-  Plus
+  Plus,
+  Target
 } from "lucide-react";
 
 const sidebarNavItems = [
@@ -31,6 +32,11 @@ const sidebarNavItems = [
     title: "Match Analysis",
     href: "/dashboard/match",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Targeted Planning",
+    href: "/dashboard/targeted-planning",
+    icon: Target,
   },
   {
     title: "Data Import",
