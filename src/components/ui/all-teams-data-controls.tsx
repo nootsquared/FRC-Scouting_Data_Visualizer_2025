@@ -81,31 +81,6 @@ export function AllTeamsDataControls({
               Exclude Zero Values
             </span>
           </div>
-
-          <div className="flex justify-center space-x-4 pt-4">
-            <Button
-              variant={currentRankingMetric === "epa" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
-                currentRankingMetric === "epa"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
-              }`}
-              onClick={() => onRankingMetricChange("epa")}
-            >
-              EPA
-            </Button>
-            <Button
-              variant={currentRankingMetric === "count" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
-                currentRankingMetric === "count"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
-              }`}
-              onClick={() => onRankingMetricChange("count")}
-            >
-              Game Piece Count
-            </Button>
-          </div>
         </div>
       </div>
     </Card>

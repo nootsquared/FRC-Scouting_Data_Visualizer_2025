@@ -33,6 +33,8 @@ import {
 import { getTeamData, calculateTeamAverages, type MatchData } from "@/lib/data-service";
 import { DataProcessingControls, ProcessingMode, ZeroHandling } from "@/components/ui/data-processing-controls";
 import { getTeamPitData, type PitData } from "@/lib/pit-data-service";
+import { useAppContext } from "@/lib/context/AppContext";
+import { SearchIcon } from "lucide-react";
 
 // Icons
 import { 
@@ -45,7 +47,6 @@ import {
   FileCode2, 
   Settings, 
   HelpCircle, 
-  Search as SearchIcon,
   Plus
 } from "lucide-react";
 
@@ -80,12 +81,20 @@ interface RPStats {
 }
 
 export default function TeamPage() {
-  const [teamNumber, setTeamNumber] = useState("");
-  const [teamData, setTeamData] = useState<MatchData[] | null>(null);
-  const [teamAverages, setTeamAverages] = useState<any>(null);
-  const [pitData, setPitData] = useState<PitData | null>(null);
-  const [processingMode, setProcessingMode] = useState<ProcessingMode>("average");
-  const [zeroHandling, setZeroHandling] = useState<ZeroHandling>("include");
+  const {
+    teamNumber,
+    setTeamNumber,
+    teamData,
+    setTeamData,
+    teamAverages,
+    setTeamAverages,
+    pitData,
+    setPitData,
+    processingMode,
+    setProcessingMode,
+    zeroHandling,
+    setZeroHandling
+  } = useAppContext();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -602,7 +611,7 @@ export default function TeamPage() {
                 </TableHeader>
                 <TableBody>
                   {teamData ? (
-                    teamData.map((match, index) => (
+                    teamData.map((match: MatchData, index: number) => (
                       <TableRow key={index} className="border-gray-800">
                         <TableCell className="text-gray-300">{match.Scouter}</TableCell>
                         <TableCell className="text-gray-300">{match.Event}</TableCell>
@@ -780,7 +789,7 @@ export default function TeamPage() {
                     </h3>
                     <div className="bg-gray-900 rounded-lg p-4">
                       <div className="flex flex-wrap gap-2">
-                        {pitData.strategy.specialFeatures.map((feature, index) => (
+                        {pitData.strategy.specialFeatures.map((feature: string, index: number) => (
                           <span
                             key={index}
                             className="px-3 py-1 bg-gray-800 text-white rounded-full text-sm"
