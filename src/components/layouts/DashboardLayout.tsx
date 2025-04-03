@@ -14,7 +14,8 @@ import {
   Settings, 
   HelpCircle, 
   Plus,
-  Target
+  Target,
+  ClipboardList
 } from "lucide-react";
 
 const sidebarNavItems = [
@@ -30,8 +31,13 @@ const sidebarNavItems = [
   },
   {
     title: "Match Analysis",
-    href: "/dashboard/match",
+    href: "/dashboard/match-analysis",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Match Summary",
+    href: "/dashboard/match-summary",
+    icon: ClipboardList,
   },
   {
     title: "Targeted Planning",

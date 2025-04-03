@@ -1,9 +1,10 @@
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type DataSource = "live" | "pre";
+export type DataSource = "live" | "prescout";
 
 interface DataSourceSelectorProps {
   currentSource: DataSource;
@@ -15,30 +16,32 @@ export function DataSourceSelector({
   onSourceChange,
 }: DataSourceSelectorProps) {
   return (
-    <div className="flex justify-center space-x-4 mb-6">
+    <div className="flex items-center space-x-2 bg-[#1A1A1A] p-1 rounded-lg border border-gray-800">
       <Button
-        variant={currentSource === "live" ? "default" : "outline"}
+        variant="ghost"
+        size="sm"
         className={cn(
-          "rounded-full px-6 py-2 transition-all duration-200",
+          "px-3 py-1 text-sm font-medium rounded-md transition-colors",
           currentSource === "live"
-            ? "bg-gray-700 hover:bg-gray-600 text-white"
-            : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+            ? "bg-blue-600 text-white"
+            : "text-gray-400 hover:text-white hover:bg-gray-800"
         )}
         onClick={() => onSourceChange("live")}
       >
         Live Data
       </Button>
       <Button
-        variant={currentSource === "pre" ? "default" : "outline"}
+        variant="ghost"
+        size="sm"
         className={cn(
-          "rounded-full px-6 py-2 transition-all duration-200",
-          currentSource === "pre"
-            ? "bg-gray-700 hover:bg-gray-600 text-white"
-            : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+          "px-3 py-1 text-sm font-medium rounded-md transition-colors",
+          currentSource === "prescout"
+            ? "bg-blue-600 text-white"
+            : "text-gray-400 hover:text-white hover:bg-gray-800"
         )}
-        onClick={() => onSourceChange("pre")}
+        onClick={() => onSourceChange("prescout")}
       >
-        Pre-Scout Data
+        Pre-scout Data
       </Button>
     </div>
   );

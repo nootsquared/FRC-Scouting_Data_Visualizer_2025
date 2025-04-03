@@ -154,7 +154,7 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
          parseInt(match["Driver Skill"]) >= 3 ? 'g' :
          parseInt(match["Driver Skill"]) >= 2 ? 'f' : 'p') :
         'p',
-      "Defense-Rating": match["Defense Rating"] ?
+      "Defense-Rating": match["Defense Rating"] && match["Defense Rating"] !== '' ?
         (parseInt(match["Defense Rating"]) >= 4 ? 'e' :
          parseInt(match["Defense Rating"]) >= 3 ? 'g' :
          parseInt(match["Defense Rating"]) >= 2 ? 'f' : 'p') :
@@ -276,8 +276,13 @@ export function calculateTeamAverages(
       case "average":
         return average(processedData);
       case "top50":
+        // Sort data in descending order
         processedData.sort((a, b) => b - a);
-        const topHalf = processedData.slice(0, Math.ceil(processedData.length / 2));
+        // Calculate the number of elements to include (top 50%)
+        const count = Math.ceil(processedData.length / 2);
+        // Take the top 50% of values
+        const topHalf = processedData.slice(0, count);
+        // Calculate the average of these values
         return average(topHalf);
       case "best":
         return Math.max(...processedData);

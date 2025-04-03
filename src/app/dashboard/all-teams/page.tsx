@@ -34,6 +34,21 @@ export default function AllTeamsPage() {
   useEffect(() => {
     const updatedRankings = getAllTeamsRankings(processingMode, zeroHandling, dataSource);
     setRankings(updatedRankings);
+    console.log("Team rankings with defense ratings:", updatedRankings.map(r => ({ 
+      team: r.teamNumber, 
+      defense: r.defenseRating,
+      dataSource: dataSource
+    })));
+    
+    // Check if any teams have non-zero defense ratings
+    const teamsWithDefense = updatedRankings.filter(r => r.defenseRating > 0);
+    console.log(`Found ${teamsWithDefense.length} teams with non-zero defense ratings out of ${updatedRankings.length} total teams`);
+    if (teamsWithDefense.length > 0) {
+      console.log("Teams with defense ratings:", teamsWithDefense.map(r => ({ 
+        team: r.teamNumber, 
+        defense: r.defenseRating 
+      })));
+    }
   }, [dataSource, processingMode, zeroHandling]);
 
   // Sort rankings based on the selected metric and prepare data for stacked bar chart
@@ -296,6 +311,57 @@ export default function AllTeamsPage() {
                     name="Barge"
                     stackId="a"
                     fill="#34D399"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Defensive Rating */}
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-2xl text-white">Defensive Rating</CardTitle>
+              <p className="text-gray-400">Average defensive rating across all matches (0-3 scale)</p>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[...rankings]
+                    .filter(team => team.defenseRating > 0 || dataSource === "live")
+                    .sort((a, b) => b.defenseRating - a.defenseRating)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="teamNumber" stroke="#9CA3AF" />
+                  <YAxis 
+                    stroke="#9CA3AF" 
+                    domain={[0, 3]}
+                    ticks={[0, 1, 2, 3]}
+                    tickFormatter={(value) => {
+                      if (value === 0) return 'Poor';
+                      if (value === 1) return 'Fair';
+                      if (value === 2) return 'Good';
+                      if (value === 3) return 'Excellent';
+                      return value.toString();
+                    }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
+                    labelStyle={{ color: '#F3F4F6', fontWeight: 600 }}
+                    itemStyle={{ color: '#E5E7EB' }}
+                    formatter={(value: number) => {
+                      if (value === 0) return ['Poor', 'Defense Rating'];
+                      if (value === 1) return ['Fair', 'Defense Rating'];
+                      if (value === 2) return ['Good', 'Defense Rating'];
+                      if (value === 3) return ['Excellent', 'Defense Rating'];
+                      return [value.toFixed(2), 'Defense Rating'];
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="defenseRating"
+                    name="Defense Rating"
+                    fill="#F59E0B"
                   />
                 </BarChart>
               </ResponsiveContainer>

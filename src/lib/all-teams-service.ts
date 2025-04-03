@@ -27,6 +27,8 @@ interface TeamRankingData {
   teleopL4: number;
   teleopProcessor: number;
   teleopBarge: number;
+  // Add defensive rating
+  defenseRating: number;
 }
 
 const calculateTeamMetrics = (
@@ -99,6 +101,29 @@ const calculateTeamMetrics = (
     teleopNet * 4
   );
 
+  // Calculate defensive rating
+  const defenseRating = processData(
+    matches.map(m => {
+      const rating = m["Defense-Rating"];
+      if (!rating || rating === '' || rating === 'p') return 0;
+      if (rating === 'e') return 3;
+      if (rating === 'g') return 2;
+      if (rating === 'f') return 1;
+      return 0;
+    })
+  );
+
+  // Log defense ratings for debugging
+  console.log(`Team ${matches[0]["Team-Number"]} defense ratings:`, 
+    matches.map(m => ({ 
+      team: m["Team-Number"], 
+      rating: m["Defense-Rating"],
+      processed: m["Defense-Rating"] === 'e' ? 3 : 
+                m["Defense-Rating"] === 'g' ? 2 : 
+                m["Defense-Rating"] === 'f' ? 1 : 0
+    }))
+  );
+
   return {
     teamNumber: matches[0]["Team-Number"],
     totalEPA: autonEPA + teleopEPA,
@@ -121,6 +146,7 @@ const calculateTeamMetrics = (
     teleopL4,
     teleopProcessor,
     teleopBarge: 0, // Not implemented yet
+    defenseRating,
   };
 };
 
