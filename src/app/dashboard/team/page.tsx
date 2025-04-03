@@ -237,43 +237,45 @@ export default function TeamPage() {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-12">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between relative">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
             <p className="text-gray-400 mt-2">Analyze performance metrics for a specific team</p>
           </div>
-          <DataSourceSelector
-            currentSource={dataSource}
-            onSourceChange={handleDataSourceChange}
-          />
+          {/* Absolute positioning for centered data source selector */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <DataSourceSelector
+              currentSource={dataSource}
+              onSourceChange={handleDataSourceChange}
+            />
+          </div>
+          <form onSubmit={handleSubmit} className="flex gap-4 items-center">
+            <Input
+              type="number"
+              placeholder="Enter team number..."
+              value={teamNumber}
+              onChange={(e) => setTeamNumber(e.target.value)}
+              className="max-w-[200px] bg-[#1A1A1A] border-gray-800 text-white"
+            />
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Loading...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <SearchIcon className="w-4 h-4" />
+                  Search
+                </span>
+              )}
+            </Button>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} className="flex gap-4 items-center">
-          <Input
-            type="number"
-            placeholder="Enter team number..."
-            value={teamNumber}
-            onChange={(e) => setTeamNumber(e.target.value)}
-            className="max-w-[200px] bg-[#1A1A1A] border-gray-800 text-white"
-          />
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Loading...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <SearchIcon className="w-4 h-4" />
-                Search
-              </span>
-            )}
-          </Button>
-        </form>
 
         <DataProcessingControls
           onModeChange={handleModeChange}
