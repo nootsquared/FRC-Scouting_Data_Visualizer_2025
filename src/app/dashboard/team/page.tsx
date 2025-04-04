@@ -36,6 +36,7 @@ import { getTeamPitData, type PitData } from "@/lib/pit-data-service";
 import { useAppContext } from "@/lib/context/AppContext";
 import { SearchIcon } from "lucide-react";
 import { DataSourceSelector, type DataSource } from "@/components/ui/data-source-selector";
+import { useRouter } from "next/navigation";
 
 // Icons
 import { 
@@ -99,13 +100,27 @@ export default function TeamPage() {
 
   const [dataSource, setDataSource] = useState<DataSource>("live");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  // Effect to update data when data source, processing mode, or zero handling changes
+  // Load team number from URL or localStorage
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const teamFromUrl = searchParams.get('team');
+    const savedTeam = localStorage.getItem('teamNumber');
+    
+    if (teamFromUrl) {
+      setTeamNumber(teamFromUrl);
+    } else if (savedTeam) {
+      setTeamNumber(savedTeam);
+    }
+  }, []);
+
+  // Effect to update data when team number, data source, processing mode, or zero handling changes
   useEffect(() => {
     if (teamNumber && teamNumber.trim() !== '') {
       updateTeamData();
     }
-  }, [dataSource, processingMode, zeroHandling]);
+  }, [teamNumber, dataSource, processingMode, zeroHandling]);
 
   const updateTeamData = () => {
     setIsLoading(true);

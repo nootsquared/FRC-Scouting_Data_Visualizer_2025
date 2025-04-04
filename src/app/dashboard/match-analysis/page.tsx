@@ -103,6 +103,10 @@ export default function MatchAnalysisPage() {
   useEffect(() => {
     const savedKey = localStorage.getItem('tbaKey');
     const savedEventCode = localStorage.getItem('eventCode');
+    const savedMatchNumber = localStorage.getItem('matchAnalysisMatchNumber');
+    const savedMatchData = localStorage.getItem('matchAnalysisData');
+    const savedRedAllianceData = localStorage.getItem('matchAnalysisRedAllianceData');
+    const savedBlueAllianceData = localStorage.getItem('matchAnalysisBlueAllianceData');
     
     if (savedKey) setTbaKey(savedKey);
     if (savedEventCode) {
@@ -110,7 +114,19 @@ export default function MatchAnalysisPage() {
     } else {
       setEventCode("2024onosh");
     }
+    if (savedMatchNumber) setMatchNumber(savedMatchNumber);
+    if (savedMatchData) setMatchData(JSON.parse(savedMatchData));
+    if (savedRedAllianceData) setRedAllianceData(JSON.parse(savedRedAllianceData));
+    if (savedBlueAllianceData) setBlueAllianceData(JSON.parse(savedBlueAllianceData));
   }, []);
+
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    if (matchNumber) localStorage.setItem('matchAnalysisMatchNumber', matchNumber);
+    if (matchData) localStorage.setItem('matchAnalysisData', JSON.stringify(matchData));
+    if (redAllianceData) localStorage.setItem('matchAnalysisRedAllianceData', JSON.stringify(redAllianceData));
+    if (blueAllianceData) localStorage.setItem('matchAnalysisBlueAllianceData', JSON.stringify(blueAllianceData));
+  }, [matchNumber, matchData, redAllianceData, blueAllianceData]);
 
   // Memoize the processTeamPredictions function to prevent unnecessary re-renders
   const processTeamPredictions = useCallback((matchData: TBAMatch) => {
@@ -332,6 +348,9 @@ export default function MatchAnalysisPage() {
 
   // Function to navigate to team analysis page
   const navigateToTeamAnalysis = (teamNumber: string) => {
+    // Save the team number to localStorage to ensure it's available when the team page loads
+    localStorage.setItem('teamNumber', teamNumber);
+    // Navigate to the team analysis page with the team number in the URL
     router.push(`/dashboard/team?team=${teamNumber}`);
   };
 

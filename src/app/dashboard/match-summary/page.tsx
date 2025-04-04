@@ -142,6 +142,9 @@ export default function MatchSummaryPage() {
   useEffect(() => {
     const savedKey = localStorage.getItem('tbaKey');
     const savedEventCode = localStorage.getItem('eventCode');
+    const savedMatchNumber = localStorage.getItem('matchSummaryMatchNumber');
+    const savedMatchData = localStorage.getItem('matchSummaryData');
+    const savedActiveTab = localStorage.getItem('matchSummaryActiveTab');
     
     if (savedKey) setTbaKey(savedKey);
     if (savedEventCode) {
@@ -149,7 +152,20 @@ export default function MatchSummaryPage() {
     } else {
       setEventCode("2024onosh");
     }
+    if (savedMatchNumber) setMatchNumber(savedMatchNumber);
+    if (savedMatchData) setMatchData(JSON.parse(savedMatchData));
+    if (savedActiveTab) {
+      setActiveTab(savedActiveTab);
+      setActiveAlliance(savedActiveTab as "red" | "blue");
+    }
   }, []);
+
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    if (matchNumber) localStorage.setItem('matchSummaryMatchNumber', matchNumber);
+    if (matchData) localStorage.setItem('matchSummaryData', JSON.stringify(matchData));
+    if (activeTab) localStorage.setItem('matchSummaryActiveTab', activeTab);
+  }, [matchNumber, matchData, activeTab]);
 
   // Function to fetch match data from TBA API
   const fetchMatchData = async () => {
