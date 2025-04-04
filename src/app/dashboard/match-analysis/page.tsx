@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,9 @@ import { DataSourceSelector, type DataSource } from "@/components/ui/data-source
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { getTeamData, calculateTeamAverages, type MatchData } from "@/lib/data-service";
-import { ProcessingMode } from "@/components/ui/data-processing-controls";
+import { ProcessingMode, ZeroHandling } from "@/components/ui/data-processing-controls";
 import { DataProcessingControls } from "@/components/ui/data-processing-controls";
+import { useAppContext } from "@/lib/context/AppContext";
 
 // Define the TBA API response types
 interface TBAMatch {
@@ -82,13 +83,17 @@ interface AlliancePredictionData {
 
 export default function MatchAnalysisPage() {
   const router = useRouter();
+  const {
+    processingMode,
+    setProcessingMode,
+    zeroHandling,
+    setZeroHandling
+  } = useAppContext();
   const [matchNumber, setMatchNumber] = useState<string>("");
   const [matchData, setMatchData] = useState<TBAMatch | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<DataSource>("live");
-  const [calculationMethod, setCalculationMethod] = useState<ProcessingMode>("average");
-  const [zeroHandling, setZeroHandling] = useState<"include" | "exclude">("include");
   const [tbaKey, setTbaKey] = useState<string>("");
   const [eventCode, setEventCode] = useState<string>("");
   const [redAllianceData, setRedAllianceData] = useState<AlliancePredictionData>({ teams: [], totalExpectedScore: 0, winPercentage: 0 });
@@ -106,6 +111,38 @@ export default function MatchAnalysisPage() {
       setEventCode("2024onosh");
     }
   }, []);
+
+  // Memoize the processTeamPredictions function to prevent unnecessary re-renders
+  const processTeamPredictions = useCallback((matchData: TBAMatch) => {
+    // Get team numbers from the match data
+    const redTeamNumbers = matchData.alliances.red.team_keys.map(key => key.replace("frc", ""));
+    const blueTeamNumbers = matchData.alliances.blue.team_keys.map(key => key.replace("frc", ""));
+    
+    // Process predictions for each team
+    const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling));
+    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling));
+    
+    // Calculate total expected scores
+    const redTotalScore = redTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
+    const blueTotalScore = blueTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
+    
+    // Calculate win percentage
+    const redWinPercentage = calculateWinPercentage(redTotalScore, blueTotalScore);
+    const blueWinPercentage = 100 - redWinPercentage;
+    
+    // Update state
+    setRedAllianceData({
+      teams: redTeamPredictions,
+      totalExpectedScore: redTotalScore,
+      winPercentage: redWinPercentage
+    });
+    
+    setBlueAllianceData({
+      teams: blueTeamPredictions,
+      totalExpectedScore: blueTotalScore,
+      winPercentage: blueWinPercentage
+    });
+  }, [dataSource, processingMode, zeroHandling]);
 
   // Function to fetch match data from TBA API
   const fetchMatchData = async () => {
@@ -145,47 +182,12 @@ export default function MatchAnalysisPage() {
       const data = await response.json();
       console.log("Match data received:", data);
       setMatchData(data);
-      
-      // Process team predictions
-      processTeamPredictions(data);
     } catch (err) {
       console.error("Error fetching match data:", err);
       setError(`Failed to fetch match data: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Function to process team predictions based on the selected method
-  const processTeamPredictions = (matchData: TBAMatch) => {
-    // Get team numbers from the match data
-    const redTeamNumbers = matchData.alliances.red.team_keys.map(key => key.replace("frc", ""));
-    const blueTeamNumbers = matchData.alliances.blue.team_keys.map(key => key.replace("frc", ""));
-    
-    // Process predictions for each team
-    const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod, zeroHandling));
-    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod, zeroHandling));
-    
-    // Calculate total expected scores
-    const redTotalScore = redTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
-    const blueTotalScore = blueTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
-    
-    // Calculate win percentage
-    const redWinPercentage = calculateWinPercentage(redTotalScore, blueTotalScore);
-    const blueWinPercentage = 100 - redWinPercentage;
-    
-    // Update state
-    setRedAllianceData({
-      teams: redTeamPredictions,
-      totalExpectedScore: redTotalScore,
-      winPercentage: redWinPercentage
-    });
-    
-    setBlueAllianceData({
-      teams: blueTeamPredictions,
-      totalExpectedScore: blueTotalScore,
-      winPercentage: blueWinPercentage
-    });
   };
 
   // Function to check if there's enough data for a team
@@ -195,7 +197,7 @@ export default function MatchAnalysisPage() {
   };
 
   // Function to generate team predictions
-  const generateTeamPrediction = (teamNumber: string, dataSource: DataSource, method: ProcessingMode, zeroHandling: "include" | "exclude"): TeamPredictionData => {
+  const generateTeamPrediction = (teamNumber: string, dataSource: DataSource, method: ProcessingMode, zeroHandling: ZeroHandling): TeamPredictionData => {
     // Get team data from the data service
     const teamData = getTeamData(parseInt(teamNumber), dataSource);
     const averages = calculateTeamAverages(teamData, method, zeroHandling);
@@ -307,28 +309,26 @@ export default function MatchAnalysisPage() {
   };
 
   // Handle data source changes
-  const handleDataSourceChange = (newSource: DataSource) => {
+  const handleDataSourceChange = useCallback((newSource: DataSource) => {
     setDataSource(newSource);
-    if (matchData) {
-      processTeamPredictions(matchData);
-    }
-  };
+  }, []);
 
-  // Handle calculation method changes
-  const handleCalculationMethodChange = (newMethod: ProcessingMode) => {
-    setCalculationMethod(newMethod);
-    if (matchData) {
-      processTeamPredictions(matchData);
-    }
-  };
+  // Handle processing mode changes
+  const handleProcessingModeChange = useCallback((mode: ProcessingMode) => {
+    setProcessingMode(mode);
+  }, [setProcessingMode]);
 
   // Handle zero handling changes
-  const handleZeroHandlingChange = (newZeroHandling: "include" | "exclude") => {
-    setZeroHandling(newZeroHandling);
+  const handleZeroHandlingChange = useCallback((handling: ZeroHandling) => {
+    setZeroHandling(handling);
+  }, [setZeroHandling]);
+
+  // Effect to reprocess predictions when relevant state changes
+  useEffect(() => {
     if (matchData) {
       processTeamPredictions(matchData);
     }
-  };
+  }, [matchData, processTeamPredictions]);
 
   // Function to navigate to team analysis page
   const navigateToTeamAnalysis = (teamNumber: string) => {
@@ -339,22 +339,10 @@ export default function MatchAnalysisPage() {
     <div className="container mx-auto p-4 bg-[#1A1A1A] text-white">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Match Analysis</h1>
-        <div className="flex gap-4">
-          <div className="bg-[#2A2A2A] p-2 rounded-md">
-            <DataSourceSelector
-              currentSource={dataSource}
-              onSourceChange={handleDataSourceChange}
-            />
-          </div>
-          <div className="bg-[#2A2A2A] p-2 rounded-md">
-            <DataProcessingControls
-              currentMode={calculationMethod}
-              onModeChange={handleCalculationMethodChange}
-              currentZeroHandling={zeroHandling}
-              onZeroHandlingChange={handleZeroHandlingChange}
-            />
-          </div>
-        </div>
+        <DataSourceSelector
+          currentSource={dataSource}
+          onSourceChange={handleDataSourceChange}
+        />
       </div>
 
       {dataSource === "live" && (
@@ -366,6 +354,13 @@ export default function MatchAnalysisPage() {
           </p>
         </div>
       )}
+
+      <DataProcessingControls
+        onModeChange={handleProcessingModeChange}
+        onZeroHandlingChange={handleZeroHandlingChange}
+        currentMode={processingMode}
+        currentZeroHandling={zeroHandling}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Match Input Section */}

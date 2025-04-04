@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -12,7 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { AllTeamsDataControls } from "@/components/ui/all-teams-data-controls";
+import { AllTeamsDataControls, ProcessingMode, ZeroHandling, RankingMetric } from "@/components/ui/all-teams-data-controls";
 import { getAllTeamsRankings } from "@/lib/all-teams-service";
 import { useAppContext } from "@/lib/context/AppContext";
 import { DataSourceSelector, type DataSource } from "@/components/ui/data-source-selector";
@@ -30,8 +30,8 @@ export default function AllTeamsPage() {
   const [dataSource, setDataSource] = useState<DataSource>("live");
   const [rankings, setRankings] = useState<any[]>([]);
 
-  // Update rankings when data source, processing mode, or zero handling changes
-  useEffect(() => {
+  // Memoize the update function to prevent unnecessary re-renders
+  const updateRankings = useCallback(() => {
     const updatedRankings = getAllTeamsRankings(processingMode, zeroHandling, dataSource);
     setRankings(updatedRankings);
     console.log("Team rankings with defense ratings:", updatedRankings.map(r => ({ 
@@ -49,7 +49,28 @@ export default function AllTeamsPage() {
         defense: r.defenseRating 
       })));
     }
-  }, [dataSource, processingMode, zeroHandling]);
+  }, [processingMode, zeroHandling, dataSource]);
+
+  // Update rankings when data source, processing mode, or zero handling changes
+  useEffect(() => {
+    updateRankings();
+  }, [updateRankings]);
+
+  const handleModeChange = (mode: ProcessingMode) => {
+    setProcessingMode(mode);
+  };
+
+  const handleZeroHandlingChange = (handling: ZeroHandling) => {
+    setZeroHandling(handling);
+  };
+
+  const handleRankingMetricChange = (metric: RankingMetric) => {
+    setRankingMetric(metric);
+  };
+
+  const handleDataSourceChange = (newSource: DataSource) => {
+    setDataSource(newSource);
+  };
 
   // Sort rankings based on the selected metric and prepare data for stacked bar chart
   const chartData = [...rankings]
@@ -104,11 +125,6 @@ export default function AllTeamsPage() {
     return bTotal - aTotal;
   });
 
-  // Handle data source changes
-  const handleDataSourceChange = (newSource: DataSource) => {
-    setDataSource(newSource);
-  };
-
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -124,9 +140,9 @@ export default function AllTeamsPage() {
         </div>
 
         <AllTeamsDataControls
-          onModeChange={setProcessingMode}
-          onZeroHandlingChange={setZeroHandling}
-          onRankingMetricChange={setRankingMetric}
+          onModeChange={handleModeChange}
+          onZeroHandlingChange={handleZeroHandlingChange}
+          onRankingMetricChange={handleRankingMetricChange}
           currentMode={processingMode}
           currentZeroHandling={zeroHandling}
           currentRankingMetric={rankingMetric}

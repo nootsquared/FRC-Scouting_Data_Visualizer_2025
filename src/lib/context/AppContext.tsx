@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { ProcessingMode, ZeroHandling, RankingMetric } from '@/components/ui/all-teams-data-controls';
 
 interface AppContextType {
@@ -37,15 +37,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [teamAverages, setTeamAverages] = useState<any>(null);
   const [pitData, setPitData] = useState<any>(null);
 
+  // Wrap state setters with useCallback to prevent unnecessary re-renders
+  const handleProcessingModeChange = useCallback((mode: ProcessingMode) => {
+    setProcessingMode(mode);
+  }, []);
+
+  const handleZeroHandlingChange = useCallback((handling: ZeroHandling) => {
+    setZeroHandling(handling);
+  }, []);
+
+  const handleRankingMetricChange = useCallback((metric: RankingMetric) => {
+    setRankingMetric(metric);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
         processingMode,
-        setProcessingMode,
+        setProcessingMode: handleProcessingModeChange,
         zeroHandling,
-        setZeroHandling,
+        setZeroHandling: handleZeroHandlingChange,
         rankingMetric,
-        setRankingMetric,
+        setRankingMetric: handleRankingMetricChange,
         teamNumber,
         setTeamNumber,
         teamData,
