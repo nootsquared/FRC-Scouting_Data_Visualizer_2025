@@ -356,8 +356,8 @@ export default function MatchAnalysisPage() {
 
   return (
     <div className="container mx-auto p-4 bg-[#1A1A1A] text-white">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">Match Analysis</h1>
+      <div className="flex justify-between items-center mb-10">
+        <h1 className="text-3xl font-bold text-white">Match Analysis</h1>
         <DataSourceSelector
           currentSource={dataSource}
           onSourceChange={handleDataSourceChange}
@@ -365,29 +365,31 @@ export default function MatchAnalysisPage() {
       </div>
 
       {dataSource === "live" && (
-        <div className="bg-yellow-900/30 border border-yellow-700 rounded-md p-4 mb-6">
-          <h3 className="text-yellow-400 font-medium">Limited Live Data Available</h3>
-          <p className="text-yellow-300/80 mt-1">
+        <div className="bg-yellow-900/30 border border-yellow-700 rounded-md p-4 mb-10">
+          <h3 className="text-yellow-400 font-medium mb-2">Limited Live Data Available</h3>
+          <p className="text-yellow-300/80">
             The live data source currently has very limited data. For more accurate predictions, 
             consider switching to the pre-scout data source which contains more historical data.
           </p>
         </div>
       )}
 
-      <DataProcessingControls
-        onModeChange={handleProcessingModeChange}
-        onZeroHandlingChange={handleZeroHandlingChange}
-        currentMode={processingMode}
-        currentZeroHandling={zeroHandling}
-      />
+      <div className="mb-10">
+        <DataProcessingControls
+          onModeChange={handleProcessingModeChange}
+          onZeroHandlingChange={handleZeroHandlingChange}
+          currentMode={processingMode}
+          currentZeroHandling={zeroHandling}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         {/* Match Input Section */}
         <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4 text-white">Match Details</h2>
-          <div className="space-y-4">
+          <h2 className="text-2xl font-semibold mb-6 text-white">Match Details</h2>
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Match Number
               </label>
               <input
@@ -406,7 +408,7 @@ export default function MatchAnalysisPage() {
               {loading ? "Loading..." : "Fetch Match Data"}
             </button>
             {error && (
-              <div className="text-red-400 text-sm">{error}</div>
+              <div className="text-red-400 text-sm mt-4">{error}</div>
             )}
           </div>
         </div>
@@ -414,15 +416,15 @@ export default function MatchAnalysisPage() {
         {/* Match Overview */}
         {matchData && (
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">Match Overview</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <h2 className="text-2xl font-semibold mb-6 text-white">Match Overview</h2>
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <h3 className="font-medium text-red-400">Red Alliance</h3>
-                <div className="space-y-2">
+                <h3 className="font-medium text-red-400 mb-4">Red Alliance</h3>
+                <div className="space-y-3">
                   {matchData.alliances.red.team_keys.map((team) => (
                     <div
                       key={team}
-                      className="flex items-center justify-between p-2 bg-[#1A1A1A] rounded"
+                      className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded"
                     >
                       <span className="text-white">{team.replace("frc", "")}</span>
                       <button
@@ -436,12 +438,12 @@ export default function MatchAnalysisPage() {
                 </div>
               </div>
               <div>
-                <h3 className="font-medium text-blue-400">Blue Alliance</h3>
-                <div className="space-y-2">
+                <h3 className="font-medium text-blue-400 mb-4">Blue Alliance</h3>
+                <div className="space-y-3">
                   {matchData.alliances.blue.team_keys.map((team) => (
                     <div
                       key={team}
-                      className="flex items-center justify-between p-2 bg-[#1A1A1A] rounded"
+                      className="flex items-center justify-between p-3 bg-[#1A1A1A] rounded"
                     >
                       <span className="text-white">{team.replace("frc", "")}</span>
                       <button
@@ -461,15 +463,15 @@ export default function MatchAnalysisPage() {
 
       {/* Team Predictions */}
       {matchData && (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Red Alliance Predictions */}
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-red-400">Red Alliance Predictions</h2>
-            <div className="space-y-6">
+            <h2 className="text-2xl font-semibold mb-8 text-red-400">Red Alliance Predictions</h2>
+            <div className="space-y-8">
               {redAllianceData.teams.map((team) => (
-                <div key={team.teamNumber} className="border border-gray-700 rounded-lg p-4 bg-[#1A1A1A]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-white">Team {team.teamNumber}</h3>
+                <div key={team.teamNumber} className="border border-gray-700 rounded-lg p-6 bg-[#1A1A1A]">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-medium text-white">Team {team.teamNumber}</h3>
                     <button
                       onClick={() => navigateToTeamAnalysis(team.teamNumber)}
                       className="text-blue-400 hover:text-blue-300"
@@ -551,12 +553,12 @@ export default function MatchAnalysisPage() {
 
           {/* Blue Alliance Predictions */}
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-blue-400">Blue Alliance Predictions</h2>
-            <div className="space-y-6">
+            <h2 className="text-2xl font-semibold mb-8 text-blue-400">Blue Alliance Predictions</h2>
+            <div className="space-y-8">
               {blueAllianceData.teams.map((team) => (
-                <div key={team.teamNumber} className="border border-gray-700 rounded-lg p-4 bg-[#1A1A1A]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-white">Team {team.teamNumber}</h3>
+                <div key={team.teamNumber} className="border border-gray-700 rounded-lg p-6 bg-[#1A1A1A]">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-medium text-white">Team {team.teamNumber}</h3>
                     <button
                       onClick={() => navigateToTeamAnalysis(team.teamNumber)}
                       className="text-blue-400 hover:text-blue-300"

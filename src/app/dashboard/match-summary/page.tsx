@@ -252,11 +252,11 @@ export default function MatchSummaryPage() {
 
   return (
     <div className="p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <div className="flex justify-between items-center mb-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-white">Match Summary</h1>
-            <p className="text-gray-400 mt-2">View detailed information about teams in a specific match</p>
+            <h1 className="text-3xl font-bold tracking-tight text-white mb-3">Match Summary</h1>
+            <p className="text-gray-400">View detailed information about teams in a specific match</p>
           </div>
           <DataSourceSelector
             currentSource={dataSource}
@@ -266,7 +266,7 @@ export default function MatchSummaryPage() {
 
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Enter Match Number</CardTitle>
+            <CardTitle className="text-white text-2xl">Enter Match Number</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex space-x-4">
@@ -281,14 +281,14 @@ export default function MatchSummaryPage() {
                 {loading ? "Loading..." : "View Match"}
               </Button>
             </div>
-            {error && <p className="text-red-500 mt-2">{error}</p>}
+            {error && <p className="text-red-500 mt-4">{error}</p>}
             {!tbaKey && (
-              <p className="text-yellow-500 mt-2">
+              <p className="text-yellow-500 mt-4">
                 TBA API key not found. Please set it in the <a href="/dashboard/targeted-planning" className="underline">Targeted Planning</a> page.
               </p>
             )}
             {!eventCode && (
-              <p className="text-yellow-500 mt-2">
+              <p className="text-yellow-500 mt-4">
                 Event code not found. Please set it in the <a href="/dashboard/targeted-planning" className="underline">Targeted Planning</a> page.
               </p>
             )}
@@ -296,7 +296,7 @@ export default function MatchSummaryPage() {
         </Card>
 
         {matchData && (
-          <div className="space-y-6">
+          <div className="space-y-10">
             <Tabs defaultValue="red" onValueChange={handleTabChange}>
               <TabsList>
                 <TabsTrigger value="red" activeTab={activeTab} onTabChange={handleTabChange} className="text-red-500">
@@ -313,13 +313,13 @@ export default function MatchSummaryPage() {
                   const abilities = getTeamAbilities(teamNumber);
                   
                   return (
-                    <div key={teamKey} className="space-y-8">
-                      <h2 className="text-2xl font-bold text-white">Red {index + 1}: Team {teamNumber}</h2>
+                    <div key={teamKey} className="space-y-10 mb-12">
+                      <h2 className="text-2xl font-bold text-white mt-8">Red {index + 1}: Team {teamNumber}</h2>
                       
                       {/* Abilities Summary */}
                       <Card className="bg-[#1A1A1A] border-gray-800">
                         <CardHeader>
-                          <CardTitle className="text-white">Team Abilities</CardTitle>
+                          <CardTitle className="text-white text-xl mb-2">Team Abilities</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -416,7 +416,7 @@ export default function MatchSummaryPage() {
                       </Card>
                       
                       {/* Team Analysis Button */}
-                      <Card className="bg-[#1A1A1A] border-gray-800 mt-8">
+                      <Card className="bg-[#1A1A1A] border-gray-800 mt-10">
                         <CardContent className="pt-6">
                           <Button 
                             onClick={() => navigateToTeamAnalysis(teamNumber)}
@@ -437,13 +437,13 @@ export default function MatchSummaryPage() {
                   const abilities = getTeamAbilities(teamNumber);
                   
                   return (
-                    <div key={teamKey} className="space-y-8">
-                      <h2 className="text-2xl font-bold text-white">Blue {index + 1}: Team {teamNumber}</h2>
+                    <div key={teamKey} className="space-y-10 mb-12">
+                      <h2 className="text-2xl font-bold text-white mt-8">Blue {index + 1}: Team {teamNumber}</h2>
                       
                       {/* Abilities Summary */}
                       <Card className="bg-[#1A1A1A] border-gray-800">
                         <CardHeader>
-                          <CardTitle className="text-white">Team Abilities</CardTitle>
+                          <CardTitle className="text-white text-xl mb-2">Team Abilities</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -540,7 +540,7 @@ export default function MatchSummaryPage() {
                       </Card>
                       
                       {/* Team Analysis Button */}
-                      <Card className="bg-[#1A1A1A] border-gray-800 mt-8">
+                      <Card className="bg-[#1A1A1A] border-gray-800 mt-10">
                         <CardContent className="pt-6">
                           <Button 
                             onClick={() => navigateToTeamAnalysis(teamNumber)}
