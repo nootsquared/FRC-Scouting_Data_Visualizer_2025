@@ -72,33 +72,33 @@ export function AllTeamsDataControls({
         <div className="space-y-4">
           <div className="flex justify-center space-x-4">
             <Button
-              variant={localMode === "average" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
+              variant="ghost"
+              className={`rounded-full px-6 py-2 transition-all duration-200 text-white hover:text-white [&:hover]:text-white ${
                 localMode === "average"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-transparent border border-gray-700 hover:bg-gray-800"
               }`}
               onClick={() => handleModeChange("average")}
             >
               Averages
             </Button>
             <Button
-              variant={localMode === "top50" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
+              variant="ghost"
+              className={`rounded-full px-6 py-2 transition-all duration-200 text-white hover:text-white [&:hover]:text-white ${
                 localMode === "top50"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-transparent border border-gray-700 hover:bg-gray-800"
               }`}
               onClick={() => handleModeChange("top50")}
             >
               Top 50%
             </Button>
             <Button
-              variant={localMode === "best" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
+              variant="ghost"
+              className={`rounded-full px-6 py-2 transition-all duration-200 text-white hover:text-white [&:hover]:text-white ${
                 localMode === "best"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-transparent border border-gray-700 hover:bg-gray-800"
               }`}
               onClick={() => handleModeChange("best")}
             >
@@ -119,22 +119,22 @@ export function AllTeamsDataControls({
 
           <div className="flex justify-center space-x-4 pt-4">
             <Button
-              variant={localRankingMetric === "epa" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
+              variant="ghost"
+              className={`rounded-full px-6 py-2 transition-all duration-200 text-white hover:text-white [&:hover]:text-white ${
                 localRankingMetric === "epa"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-transparent border border-gray-700 hover:bg-gray-800"
               }`}
               onClick={() => handleRankingMetricChange("epa")}
             >
               EPA
             </Button>
             <Button
-              variant={localRankingMetric === "count" ? "default" : "outline"}
-              className={`rounded-full px-6 py-2 transition-all duration-200 ${
+              variant="ghost"
+              className={`rounded-full px-6 py-2 transition-all duration-200 text-white hover:text-white [&:hover]:text-white ${
                 localRankingMetric === "count"
-                  ? "bg-gray-700 hover:bg-gray-600 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-transparent border border-gray-700 hover:bg-gray-800"
               }`}
               onClick={() => handleRankingMetricChange("count")}
             >
