@@ -157,14 +157,20 @@ export default function MatchAnalysisPage() {
   };
 
   // Function to process team predictions based on the selected method
-  const processTeamPredictions = (matchData: TBAMatch) => {
+  const processTeamPredictions = (matchData: TBAMatch, method: ProcessingMode = calculationMethod) => {
+    console.log("processing with method:", method);
+
     // Get team numbers from the match data
     const redTeamNumbers = matchData.alliances.red.team_keys.map(key => key.replace("frc", ""));
     const blueTeamNumbers = matchData.alliances.blue.team_keys.map(key => key.replace("frc", ""));
     
-    // Process predictions for each team
-    const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod, zeroHandling));
-    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod, zeroHandling));
+    // Process predictions for each team using the passed method
+    const redTeamPredictions = redTeamNumbers.map(teamNumber => 
+      generateTeamPrediction(teamNumber, dataSource, method, zeroHandling)
+    );
+    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => 
+      generateTeamPrediction(teamNumber, dataSource, method, zeroHandling)
+    );
     
     // Calculate total expected scores
     const redTotalScore = redTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
@@ -175,17 +181,17 @@ export default function MatchAnalysisPage() {
     const blueWinPercentage = 100 - redWinPercentage;
     
     // Update state
-    setRedAllianceData({
+    setRedAllianceData(() => ({
       teams: redTeamPredictions,
       totalExpectedScore: redTotalScore,
       winPercentage: redWinPercentage
-    });
+    }));
     
-    setBlueAllianceData({
+    setBlueAllianceData(() => ({
       teams: blueTeamPredictions,
       totalExpectedScore: blueTotalScore,
       winPercentage: blueWinPercentage
-    });
+    }));
   };
 
   // Function to check if there's enough data for a team
@@ -308,7 +314,8 @@ export default function MatchAnalysisPage() {
 
   // Handle data source changes
   const handleDataSourceChange = (newSource: DataSource) => {
-    setDataSource(newSource);
+    console.log("handleDataSourceChange", newSource);
+    setDataSource(() => newSource);
     if (matchData) {
       processTeamPredictions(matchData);
     }
@@ -318,13 +325,13 @@ export default function MatchAnalysisPage() {
   const handleCalculationMethodChange = (newMethod: ProcessingMode) => {
     setCalculationMethod(newMethod);
     if (matchData) {
-      processTeamPredictions(matchData);
+      processTeamPredictions(matchData, newMethod);
     }
   };
 
   // Handle zero handling changes
   const handleZeroHandlingChange = (newZeroHandling: "include" | "exclude") => {
-    setZeroHandling(newZeroHandling);
+    setZeroHandling(() => newZeroHandling);
     if (matchData) {
       processTeamPredictions(matchData);
     }
