@@ -1,0 +1,52 @@
+Scouter,Event,Match-Level,Match-Number,Robot,Team-Number,Auton-Position,Auton-Leave-Start,Auton-Coral-L4,Auton-Coral-L3,Auton-Coral-L2,Auton-Coral-L1,Algae-Removed- from-Reef,Auton-Algae-Processor,Auton-Algae-Net,Teleop-Coral-L4,Teleop-Coral-L3,Teleop-Coral-L2,Teleop-Coral-L1,TeleOp-Removed- from-Reef,Teleop-Algae-Processor,Teleop-Algae-Net,Defense-Played-on-Robot,Climb Score,Driver Skill,Defense Rating,Died,Tippy,Comments
+DH,2025micmp4,qm,1,r3,5660,c,1,1,0,0,0,1,0,0,0,6,4,1,0,0,0,0,12,2,0,,0,
+Sp,2025micmp4,qm,1,b2,5066,p,1,3,0,0,0,1,0,0,3,1,4,0,1,0,0,0,2,2,,,0,
+DR KT,2025micmp4,qm,1,b1,3875,c,1,0,0,0,0,0,0,0,2,2,2,1,1,0,0,0,12,0,,,0,
+Ag,2025micmp4,qm,1,r1,1701,o,1,3,0,0,0,0,0,0,2,2,3,4,3,0,1,0,12,4,,,0,
+"CS,MH",2025micmp4,qm,1,r2,5216,p,1,3,0,0,0,0,0,0,2,3,3,3,1,2,0,0,2,4,0,,0,Fast scorer with minor accuracy problems
+SK,2025micmp4,qm,1,b3,6637,o,1,2,0,0,0,0,0,0,0,2,0,2,1,2,0,0,0,2,,,0,"Average driving, didn't climb"
+DH,2025micmp4,qm,2,r3,5152,o,1,1,0,0,0,0,0,0,2,2,1,0,1,0,0,0,12,2,,,1,
+DR KT,2025micmp4,qm,2,b1,3604,p,1,2,0,0,0,0,0,0,6,1,2,1,2,0,0,0,12,4,,,0,
+Sp,2025micmp4,qm,2,b,10349,c,1,0,0,0,1,1,0,0,0,0,3,4,0,3,0,0,0,0,0,,0,
+"CS,MH",2025micmp4,qm,2,r2,4405,p,1,3,0,0,0,0,0,0,5,3,1,0,2,0,0,0,12,4,,,0,Had some difficulty aligning their scorer to reef
+SK,2025micmp4,qm,2,b3,1498,o,1,3,0,0,0,0,0,0,1,4,1,0,1,0,0,0,12,2,,,1,"Almost fell over, although had a fast ground intake"
+Ag,2025micmp4,qm,2,r1,5193,c,1,0,0,0,0,0,0,0,0,5,3,0,2,0,0,0,12,2,,,0,They scored a coral but then they removed it
+Ag+An,2025micmp4,qm,3,r1,302,c,1,1,0,0,0,3,0,1,1,0,0,0,0,0,1,0,0,,,1,0,"Auton worked, teleop for 10 sec"
+DR KT,2025micmp4,qm,3,b1,7790,o,1,2,0,0,0,0,0,0,3,3,2,1,1,0,0,0,12,2,,,0,
+DH,2025micmp4,qm,3,r3,226,o,1,3,0,0,0,0,0,0,3,4,4,0,1,0,0,0,12,2,,,0,
+Sp,2025micmp4,qm,3,b2,6344,p,1,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2.1,0,,,0,Long cycle times. Bad aim for l2
+"CS,AA",2025micmp4,qm,3,r2,1076,p,1,3,0,0,0,0,0,0,1,5,3,1,2,2,0,0,2,2,,,0,Accurate coral scorer- inaccurate barge scorer
+SK,2025micmp4,qm,3,b3,858,c,1,0,0,0,0,1,0,0,1,2,1,1,3,2,1,0,2,2,,,0,Average robot
+DH,2025micmp4,qm,4,r3,3656,p,1,1,0,0,0,0,0,0,4,1,3,0,2,0,0,1,2.1,2,,,1,Few sec coral under elevator
+Ag An,2025micmp4,qm,4,r1,494,o,1,2,0,0,0,0,0,0,2,4,3,0,2,0,1,1,12,2,,,0,Arm is a little slow. No auto align
+HB KT,2025micmp4,qm,4,b1,10505,o,1,0,0,0,0,0,0,0,3,2,6,0,1,1,0,0,0,2,,,0,
+Sp,2025micmp4,qm,4,b2,2137,p,1,3,0,0,0,0,0,0,5,6,1,0,3,0,2,0,2.1,4,,,1,
+"CS,AA",2025micmp4,qm,4,r2,4377,c,1,0,0,0,0,0,0,0,0,0,0,0,2,5,0,0,2,0,,,0,Slow and inaccurate coral scorer
+SK,2025micmp4,qm,4,b3,10606,c,1,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2.1,2,2,,0,Average defense and was slowing down other teams robots
+DH,2025micmp4,qm,5,r3,2337,p,1,3,0,0,0,0,0,0,6,6,5,0,2,0,0,0,12,4,,,0,Absurd
+Sp,2025micmp4,qm,5,b2,5314,p,1,1,0,0,0,1,0,0,3,1,1,1,0,0,0,0,12,2,,,1,Manual aim for everything
+KT HB,2025micmp4,qm,5,b1,5150,c,1,0,0,0,0,0,0,0,1,0,1,1,3,1,0,0,12,0,,,0,
+Ag An,2025micmp4,qm,5,r1,245,c,1,0,0,0,0,0,0,0,0,0,0,0,1,3,0,0,12,2,,,0,
+SK,2025micmp4,qm,5,b3,107,o,1,0,0,0,1,0,0,0,0,4,3,2,2,0,0,0,0,2,,,0,Average robot but didn't park or climb
+"CS,AA",2025micmp4,qm,5,r2,6615,o,1,1,0,0,0,0,0,0,1,0,0,0,1,3,0,0,2,0,,,0,"Accuracy and alignment problems, kept dropping coral"
+Sp,2025micmp4,qm,6,b2,3175,p,1,1,0,0,0,0,0,0,4,3,3,0,2,0,1,0,12,4,,,0,In auton they have really bad aim
+DH,2025micmp4,qm,6,r3,4237,p,1,2,0,0,0,1,0,0,7,3,4,0,1,0,0,0,2,2,,,0,Missed first L4 during auto
+KT HB,2025micmp4,qm,6,b1,2075,o,1,2,0,0,0,0,0,0,3,3,5,1,3,2,0,0,12,4,,,0,
+SK,2025micmp4,qm,6,b3,10633,c,1,0,0,0,0,0,0,0,1,3,4,1,1,0,0,0,2,2,,,1,"Slightly tippy, but good amount of points scored"
+Ag An,2025micmp4,qm,6,r1,9255,c,1,0,0,0,0,0,0,0,0,2,1,0,2,0,0,0,2.1,0,,,0,Descored own L1
+"CS,AA",2025micmp4,qm,6,r2,6029,o,1,0,0,0,1,0,0,0,0,0,0,0,1,6,0,0,2.1,2,,,0,Kept dropping coral before scoring- slow coral scorer
+CG,2025micmp4,qm,7,b2,9673,c,1,0,0,0,1,0,0,0,0,4,0,1,2,0,0,0,12,2,,,0,Dropped 3 coral
+DY,2025micmp4,qm,7,r3,862,p,0,3,0,0,0,0,0,0,2,4,2,3,3,0,1,0,12,2,,,0,Fast.
+TRAA,2025micmp4,qm,7,r2,51,o,1,1,0,0,0,0,0,0,5,0,1,2,1,0,1,0,2,2,,,1,Failed intake often.
+MR AN,2025micmp4,qm,7,r1,5660,c,1,0,0,0,0,1,0,0,0,6,3,0,2,0,2,0,12,2,,,0,
+KT HB,2025micmp4,qm,7,b1,10349,o,0,0,0,0,1,0,0,0,0,0,3,3,0,1,0,0,0,0,,,0,"The can only do level 1,2"
+KC,2025micmp4,qm,7,b3,910,p,1,2,0,0,0,0,0,0,7,0,0,0,2,0,0,0,2,2,,,0,Can't score below L4
+CG,2025micmp4,qm,8,b2,5193,o,1,0,0,0,0,0,0,0,0,6,2,0,1,0,0,0,12,2,,,1,Dropped all the corals in auton
+MR AN,2025micmp4,qm,8,r3,5066,o,1,2,0,0,0,2,0,0,2,5,5,0,1,0,1,0,0,2,,,0,
+DY,2025micmp4,qm,8,r3,5066,p,0,2,0,0,0,0,0,0,2,5,5,0,1,0,1,0,0,2,,,0,Not sure if I missed one because ppl were standing up
+AK HB,2025micmp4,qm,8,b1,4377,p,1,0,0,0,0,0,0,0,0,0,0,0,5,7,0,0,0,2,,,0,Focused on mostly algee
+KC,2025micmp4,qm,8,b3,6344,c,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,12,2,,,0,Difficulty picking up from station
+"TR,AA",2025micmp4,qm,8,r2,7790,o,1,2,0,0,0,0,0,0,1,1,2,4,1,0,0,0,2.1,2,,,0,Missed outake a few times.
+MR AN,2025micmp4,qm,9,r3,2337,p,1,3,0,0,0,0,0,0,3,8,4,0,2,2,0,0,12,4,,,1,
+CG,2025micmp4,qm,9,b2,4405,p,1,3,0,0,0,0,0,0,3,3,0,0,0,1,0,0,12,2,,,0,Bad with L1
+"TR,AA",2025micmp4,qm,9,r2,6637,o,1,1,0,0,0,0,0,0,5,3,0,0,0,0,0,0,2,2,,,1,

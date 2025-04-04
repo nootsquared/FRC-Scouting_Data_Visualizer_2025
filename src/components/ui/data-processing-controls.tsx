@@ -29,39 +29,36 @@ export function DataProcessingControls({
 
         <div className="space-y-4">
           <div className="flex justify-center space-x-4">
-            <Button
-              variant={currentMode === "average" ? "default" : "outline"}
+            <button
               className={`rounded-full px-6 py-2 transition-all duration-200 ${
                 currentMode === "average"
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  : "bg-transparent border border-gray-700 text-gray-300 hover:bg-gray-800"
               }`}
               onClick={() => onModeChange("average")}
             >
               Averages
-            </Button>
-            <Button
-              variant={currentMode === "top50" ? "default" : "outline"}
+            </button>
+            <button
               className={`rounded-full px-6 py-2 transition-all duration-200 ${
                 currentMode === "top50"
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  : "bg-transparent border border-gray-700 text-gray-300 hover:bg-gray-800"
               }`}
               onClick={() => onModeChange("top50")}
             >
               Top 50%
-            </Button>
-            <Button
-              variant={currentMode === "best" ? "default" : "outline"}
+            </button>
+            <button
               className={`rounded-full px-6 py-2 transition-all duration-200 ${
                 currentMode === "best"
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                  : "bg-transparent border border-gray-700 text-gray-300 hover:bg-gray-800"
               }`}
               onClick={() => onModeChange("best")}
             >
               Best Performance
-            </Button>
+            </button>
           </div>
 
           <div className="flex items-center justify-center space-x-4 pt-4">

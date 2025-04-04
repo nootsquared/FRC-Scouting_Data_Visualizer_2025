@@ -297,7 +297,7 @@ export default function MatchSummaryPage() {
                   const abilities = getTeamAbilities(teamNumber);
                   
                   return (
-                    <div key={teamKey} className="space-y-4">
+                    <div key={teamKey} className="space-y-8">
                       <h2 className="text-2xl font-bold text-white">Red {index + 1}: Team {teamNumber}</h2>
                       
                       {/* Abilities Summary */}
@@ -400,7 +400,7 @@ export default function MatchSummaryPage() {
                       </Card>
                       
                       {/* Team Analysis Button */}
-                      <Card className="bg-[#1A1A1A] border-gray-800">
+                      <Card className="bg-[#1A1A1A] border-gray-800 mt-8">
                         <CardContent className="pt-6">
                           <Button 
                             onClick={() => navigateToTeamAnalysis(teamNumber)}
@@ -421,7 +421,7 @@ export default function MatchSummaryPage() {
                   const abilities = getTeamAbilities(teamNumber);
                   
                   return (
-                    <div key={teamKey} className="space-y-4">
+                    <div key={teamKey} className="space-y-8">
                       <h2 className="text-2xl font-bold text-white">Blue {index + 1}: Team {teamNumber}</h2>
                       
                       {/* Abilities Summary */}
@@ -524,7 +524,7 @@ export default function MatchSummaryPage() {
                       </Card>
                       
                       {/* Team Analysis Button */}
-                      <Card className="bg-[#1A1A1A] border-gray-800">
+                      <Card className="bg-[#1A1A1A] border-gray-800 mt-8">
                         <CardContent className="pt-6">
                           <Button 
                             onClick={() => navigateToTeamAnalysis(teamNumber)}

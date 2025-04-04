@@ -77,52 +77,127 @@ export default function DataImport() {
 
   const convertCsvToJson = async (file: File, type: 'pit' | 'scouting' | 'pre') => {
     try {
+      console.log('Starting CSV conversion...');
+      
       // Read the file as text
       const text = await file.text();
+      console.log('File read successfully');
       
-      // Parse CSV
-      const rows = text.split('\n').map(row => row.split(',').map(cell => cell.trim()));
+      // Split into lines and remove empty lines
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      console.log('Number of lines:', lines.length);
       
-      if (rows.length < 2) {
+      if (lines.length < 2) {
         throw new Error('CSV file must contain at least a header row and one data row');
       }
+
+      // Parse headers
+      const headers = lines[0].split(',').map(header => header.trim());
+      console.log('Headers found:', headers);
       
-      // Extract headers from the first row
-      const headers = rows[0];
-      
-      // Convert the rest of the rows to objects using the headers as keys
-      const matches = rows.slice(1).map(row => {
-        const rowData: Record<string, any> = {};
-        
-        headers.forEach((header, index) => {
-          // Handle empty or undefined values
-          const value = row[index] !== undefined ? row[index] : '';
-          rowData[header] = value;
-        });
-        
-        return rowData;
+      // Validate required headers
+      const requiredHeaders = [
+        'Scouter', 'Event', 'Match-Level', 'Match-Number', 'Team-Number',
+        'Auton-Position', 'Auton-Leave-Start', 'Auton-Coral-L4', 'Auton-Coral-L3',
+        'Auton-Coral-L2', 'Auton-Coral-L1', 'Algae-Removed- from-Reef',
+        'Auton-Algae-Processor', 'Auton-Algae-Net', 'Teleop-Coral-L4',
+        'Teleop-Coral-L3', 'Teleop-Coral-L2', 'Teleop-Coral-L1',
+        'TeleOp-Removed- from-Reef', 'Teleop-Algae-Processor', 'Teleop-Algae-Net',
+        'Defense-Played-on-Robot', 'Climb Score', 'Driver Skill', 'Defense Rating',
+        'Died', 'Tippy', 'Comments'
+      ];
+
+      const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
+      if (missingHeaders.length > 0) {
+        console.error('Missing headers:', missingHeaders);
+        throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`);
+      }
+
+      // Process data rows
+      const matches = lines.slice(1).map((line, index) => {
+        try {
+          // Split the line while respecting quoted fields
+          const row: string[] = [];
+          let currentField = '';
+          let inQuotes = false;
+          
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              row.push(currentField.trim());
+              currentField = '';
+            } else {
+              currentField += char;
+            }
+          }
+          row.push(currentField.trim());
+
+          // Create match object with proper data types
+          const match: Record<string, any> = {};
+          
+          // Map each header to its corresponding value
+          headers.forEach((header, index) => {
+            let value = row[index] || '';
+            
+            // Remove any remaining quotes
+            value = value.replace(/^["']|["']$/g, '').trim();
+            
+            // Convert numeric fields
+            const numericFields = [
+              'Auton-Leave-Start', 'Auton-Coral-L4', 'Auton-Coral-L3', 'Auton-Coral-L2',
+              'Auton-Coral-L1', 'Algae-Removed- from-Reef', 'Auton-Algae-Processor',
+              'Auton-Algae-Net', 'Teleop-Coral-L4', 'Teleop-Coral-L3', 'Teleop-Coral-L2',
+              'Teleop-Coral-L1', 'TeleOp-Removed- from-Reef', 'Teleop-Algae-Processor',
+              'Teleop-Algae-Net', 'Defense-Played-on-Robot', 'Climb Score', 'Driver Skill',
+              'Defense Rating', 'Died', 'Tippy'
+            ];
+
+            if (numericFields.includes(header)) {
+              match[header] = value === '' ? '0' : parseFloat(value).toString();
+            } else {
+              match[header] = value;
+            }
+          });
+
+          // Validate team number
+          const teamNumber = parseInt(match['Team-Number']);
+          if (isNaN(teamNumber) || teamNumber < 1 || teamNumber > 99999) {
+            console.error('Invalid team number in row:', index + 2, 'Value:', match['Team-Number']);
+            throw new Error(`Invalid team number in row ${index + 2}: ${match['Team-Number']}`);
+          }
+
+          return match;
+        } catch (error) {
+          console.error(`Error processing row ${index + 2}:`, error);
+          throw error;
+        }
       });
 
-      // Create the proper structure with a 'matches' array
+      console.log('Successfully processed matches:', matches.length);
+
       const formattedData = {
         matches: matches
       };
 
-      // Save the JSON file with the correct naming convention
       const fileName = type === 'pit' ? 'pit-scouting-data.json' : 
                       type === 'scouting' ? 'scouting-data.json' : 
                       'scouting-data-pre.json';
       
+      console.log('Saving data to file:', fileName);
       const saved = await saveJsonToFile(formattedData, fileName);
       
       if (!saved) {
         throw new Error('Failed to save file');
       }
 
+      console.log('File saved successfully');
       return true;
     } catch (error) {
-      console.error('Error converting file:', error);
-      return false;
+      console.error('Error in convertCsvToJson:', error);
+      throw error;
     }
   };
 
@@ -157,7 +232,12 @@ export default function DataImport() {
       }
     } catch (error) {
       console.error('Error processing file:', error);
-      setState({ file, status: 'error', error: 'An unexpected error occurred' });
+      // Display the actual error message
+      setState({ 
+        file, 
+        status: 'error', 
+        error: error instanceof Error ? error.message : 'An unexpected error occurred' 
+      });
     }
     
     // Reset the input value to allow selecting the same file again
@@ -300,7 +380,7 @@ export default function DataImport() {
 
   return (
     <Box sx={{ p: 6, maxWidth: 900, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 600, mb: 4 }}>
+      <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 600, mb: 8 }}>
         Data Import
       </Typography>
       

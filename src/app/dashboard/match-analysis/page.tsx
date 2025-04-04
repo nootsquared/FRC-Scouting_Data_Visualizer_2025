@@ -163,8 +163,8 @@ export default function MatchAnalysisPage() {
     const blueTeamNumbers = matchData.alliances.blue.team_keys.map(key => key.replace("frc", ""));
     
     // Process predictions for each team
-    const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod));
-    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod));
+    const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod, zeroHandling));
+    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, calculationMethod, zeroHandling));
     
     // Calculate total expected scores
     const redTotalScore = redTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
@@ -195,7 +195,7 @@ export default function MatchAnalysisPage() {
   };
 
   // Function to generate team predictions
-  const generateTeamPrediction = (teamNumber: string, dataSource: DataSource, method: ProcessingMode): TeamPredictionData => {
+  const generateTeamPrediction = (teamNumber: string, dataSource: DataSource, method: ProcessingMode, zeroHandling: "include" | "exclude"): TeamPredictionData => {
     // Get team data from the data service
     const teamData = getTeamData(parseInt(teamNumber), dataSource);
     const averages = calculateTeamAverages(teamData, method, zeroHandling);
@@ -520,30 +520,6 @@ export default function MatchAnalysisPage() {
                       Total Expected Points: {team.totalExpectedPoints.toFixed(1)}
                     </div>
                   </div>
-
-                  <div className="bg-[#2A2A2A] rounded-lg p-4 mb-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">Team {team.teamNumber}</h3>
-                    
-                    {!team.hasEnoughData && (
-                      <div className="bg-yellow-900/30 border border-yellow-700 rounded-md p-3 mb-3">
-                        <p className="text-yellow-300/80 text-sm">
-                          Limited data available ({team.matchCount} matches). Predictions may be less accurate.
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>L4: {team.auton.l4.toFixed(1)}</div>
-                      <div>L3: {team.auton.l3.toFixed(1)}</div>
-                      <div>L2: {team.auton.l2.toFixed(1)}</div>
-                      <div>L1: {team.auton.l1.toFixed(1)}</div>
-                      <div>Barge: {team.auton.barge.toFixed(1)}</div>
-                      <div>Processor: {team.auton.processor.toFixed(1)}</div>
-                      <div className="col-span-2 font-medium text-white">
-                        Expected Points: {team.auton.expectedPoints.toFixed(1)}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               ))}
               
@@ -629,30 +605,6 @@ export default function MatchAnalysisPage() {
                   <div className="mt-4 pt-4 border-t border-gray-700">
                     <div className="font-bold text-white">
                       Total Expected Points: {team.totalExpectedPoints.toFixed(1)}
-                    </div>
-                  </div>
-
-                  <div className="bg-[#2A2A2A] rounded-lg p-4 mb-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">Team {team.teamNumber}</h3>
-                    
-                    {!team.hasEnoughData && (
-                      <div className="bg-yellow-900/30 border border-yellow-700 rounded-md p-3 mb-3">
-                        <p className="text-yellow-300/80 text-sm">
-                          Limited data available ({team.matchCount} matches). Predictions may be less accurate.
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>L4: {team.auton.l4.toFixed(1)}</div>
-                      <div>L3: {team.auton.l3.toFixed(1)}</div>
-                      <div>L2: {team.auton.l2.toFixed(1)}</div>
-                      <div>L1: {team.auton.l1.toFixed(1)}</div>
-                      <div>Barge: {team.auton.barge.toFixed(1)}</div>
-                      <div>Processor: {team.auton.processor.toFixed(1)}</div>
-                      <div className="col-span-2 font-medium text-white">
-                        Expected Points: {team.auton.expectedPoints.toFixed(1)}
-                      </div>
                     </div>
                   </div>
                 </div>
