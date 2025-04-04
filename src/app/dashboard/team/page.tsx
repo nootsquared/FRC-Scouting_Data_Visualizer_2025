@@ -343,19 +343,19 @@ export default function TeamPage() {
                 <h3 className="text-lg font-semibold text-white mb-4">Autonomous</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L4 Average:</span>
+                    <span className="text-gray-400">L4:</span>
                     <span className="text-white">{teamAverages?.autonL4Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L3 Average:</span>
+                    <span className="text-gray-400">L3:</span>
                     <span className="text-white">{teamAverages?.autonL3Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L2 Average:</span>
+                    <span className="text-gray-400">L2:</span>
                     <span className="text-white">{teamAverages?.autonL2Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L1 Average:</span>
+                    <span className="text-gray-400">L1:</span>
                     <span className="text-white">{teamAverages?.autonL1Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
@@ -378,19 +378,19 @@ export default function TeamPage() {
                 <h3 className="text-lg font-semibold text-white mb-4">Teleop</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L4 Average:</span>
+                    <span className="text-gray-400">L4:</span>
                     <span className="text-white">{teamAverages?.teleopL4Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L3 Average:</span>
+                    <span className="text-gray-400">L3:</span>
                     <span className="text-white">{teamAverages?.teleopL3Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L2 Average:</span>
+                    <span className="text-gray-400">L2:</span>
                     <span className="text-white">{teamAverages?.teleopL2Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">L1 Average:</span>
+                    <span className="text-gray-400">L1:</span>
                     <span className="text-white">{teamAverages?.teleopL1Average.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
