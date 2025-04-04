@@ -54,7 +54,7 @@ export default function TargetedPlanningPage() {
     if (savedEventCode) {
       setEventCode(savedEventCode);
     } else {
-      setEventCode("2024onosh");
+      setEventCode("2024miket"); // Set default to Michigan State Championship
     }
     if (savedMatches) setMatches(JSON.parse(savedMatches));
     if (savedUpcomingMatches) setUpcomingMatches(JSON.parse(savedUpcomingMatches));
@@ -74,22 +74,70 @@ export default function TargetedPlanningPage() {
 
   const fetchMatches = async () => {
     if (!tbaKey) {
+      console.log('No TBA API key provided');
       setError('Please enter your TBA API key');
       return;
     }
 
     if (!eventCode) {
+      console.log('No event code provided');
       setError('Please enter an event code');
       return;
     }
 
-    console.log('Fetching matches for team:', teamNumber, 'at event:', eventCode);
+    console.log('Fetching matches with:', {
+      teamNumber,
+      eventCode,
+      tbaKeyLength: tbaKey.length,
+      tbaKeyPrefix: tbaKey.substring(0, 5) + '...'
+    });
+    
     setLoading(true);
     setError(null);
 
     try {
-      // First, fetch all event matches
-      const response = await fetch(
+      // Test the API key first with a simple request
+      const testResponse = await fetch(
+        `${TBA_API_BASE}/status`,
+        {
+          headers: {
+            'X-TBA-Auth-Key': tbaKey,
+          },
+        }
+      );
+
+      if (!testResponse.ok) {
+        console.error('API Key validation failed:', await testResponse.text());
+        throw new Error('Invalid API key');
+      }
+
+      // Fetch team-specific matches
+      const url = `${TBA_API_BASE}/team/frc${teamNumber}/event/${eventCode}/matches`;
+      console.log('Fetching from URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'X-TBA-Auth-Key': tbaKey,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('TBA API Error Response:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        throw new Error(`TBA API error: ${response.status} - ${errorText}`);
+      }
+
+      const teamMatches = await response.json();
+      console.log('Received team matches:', teamMatches);
+
+      // Also fetch all event matches for opponent lookup
+      const allMatchesResponse = await fetch(
         `${TBA_API_BASE}/event/${eventCode}/matches`,
         {
           headers: {
@@ -98,33 +146,28 @@ export default function TargetedPlanningPage() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`TBA API error: ${response.status}`);
+      if (!allMatchesResponse.ok) {
+        throw new Error(`Failed to fetch all matches: ${allMatchesResponse.statusText}`);
       }
 
-      const allMatches = await response.json();
-      console.log('Received all matches:', allMatches);
+      const allMatches = await allMatchesResponse.json();
+      setMatches(allMatches);
 
-      // Filter matches for our team
-      const teamMatches = allMatches.filter((match: TBAMatch) => {
-        const allTeams = [
-          ...match.alliances.red.team_keys,
-          ...match.alliances.blue.team_keys,
-        ];
-        return allTeams.includes(`frc${teamNumber}`);
-      });
-      
-      setMatches(allMatches); // Store all matches for opponent lookup
-      
-      // Sort matches by time and filter for upcoming
-      const now = Date.now() / 1000;
+      // Filter and sort the team's matches
       const upcoming = teamMatches
-        .filter((match: TBAMatch) => (match.predicted_time || match.time) >= now)
+        .filter((match: TBAMatch) => {
+          // Only include qualification matches
+          return match.comp_level === 'qm';
+        })
         .sort((a: TBAMatch, b: TBAMatch) => {
-          const timeA = a.predicted_time || a.time;
-          const timeB = b.predicted_time || b.time;
-          return timeA - timeB;
+          // Sort by match number
+          return a.match_number - b.match_number;
         });
+      
+      console.log('Filtered and sorted matches:', upcoming.map((match: TBAMatch) => ({
+        number: match.match_number,
+        type: match.comp_level
+      })));
       
       setUpcomingMatches(upcoming);
       
@@ -346,8 +389,8 @@ export default function TargetedPlanningPage() {
                     variant={selectedMatch?.key === match.key ? "default" : "outline"}
                     className={`h-auto py-4 px-6 text-left ${
                       selectedMatch?.key === match.key
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800"
+                        ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                        : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
                     }`}
                     onClick={() => handleMatchSelect(match)}
                   >
