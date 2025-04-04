@@ -31,6 +31,37 @@ interface TeamRankingData {
   defenseRating: number;
 }
 
+// Helper function to process defense rating
+const processDefenseRating = (rating: string | number | undefined): number => {
+  // Convert numeric ratings (0-3) directly
+  if (!isNaN(Number(rating))) {
+    const numRating = Number(rating);
+    return numRating >= 0 && numRating <= 3 ? numRating : 0;
+  }
+  // Handle empty or invalid values
+  if (!rating || typeof rating !== 'string') return 0;
+  // Convert text ratings to numbers
+  switch(rating.toLowerCase()) {
+    case '3':
+    case 'excellent':
+    case 'e':
+      return 3;
+    case '2':
+    case 'good':
+    case 'g':
+      return 2;
+    case '1':
+    case 'fair':
+    case 'f':
+      return 1;
+    case '0':
+    case 'poor':
+    case 'p':
+    default:
+      return 0;
+  }
+};
+
 const calculateTeamMetrics = (
   matches: MatchData[],
   mode: ProcessingMode,
@@ -102,27 +133,27 @@ const calculateTeamMetrics = (
   );
 
   // Calculate defensive rating
-  const defenseRating = processData(
-    matches.map(m => {
-      const rating = m["Defense-Rating"];
-      if (!rating || rating === '' || rating === 'p') return 0;
-      if (rating === 'e') return 3;
-      if (rating === 'g') return 2;
-      if (rating === 'f') return 1;
-      return 0;
-    })
-  );
+  const defenseRatings = matches.map(m => {
+    const rawRating = m["Defense Rating"];
+    const processedRating = processDefenseRating(rawRating);
+    console.log(`Team ${m["Team-Number"]} match defense rating:`, {
+      raw: rawRating,
+      processed: processedRating,
+      matchNumber: m["Match-Number"]
+    });
+    return processedRating;
+  }).filter(rating => rating > 0); // Always exclude zero values for defense rating
 
-  // Log defense ratings for debugging
-  console.log(`Team ${matches[0]["Team-Number"]} defense ratings:`, 
-    matches.map(m => ({ 
-      team: m["Team-Number"], 
-      rating: m["Defense-Rating"],
-      processed: m["Defense-Rating"] === 'e' ? 3 : 
-                m["Defense-Rating"] === 'g' ? 2 : 
-                m["Defense-Rating"] === 'f' ? 1 : 0
-    }))
-  );
+  const defenseRating = defenseRatings.length > 0 
+    ? defenseRatings.reduce((a, b) => a + b, 0) / defenseRatings.length 
+    : 0;
+
+  console.log(`Team ${matches[0]["Team-Number"]} final defense rating:`, {
+    allRatings: defenseRatings,
+    processedAverage: defenseRating,
+    mode,
+    zeroHandling
+  });
 
   return {
     teamNumber: matches[0]["Team-Number"],

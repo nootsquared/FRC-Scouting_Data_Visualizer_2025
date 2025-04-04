@@ -71,9 +71,9 @@ interface RawMatchData {
 export interface MatchData {
   Scouter: string;
   Event: string;
+  Robot: string;
   "Match-Level": string;
   "Match-Number": string;
-  Robot: string;
   "Team-Number": string;
   "Auton-Position": string;
   "Auton-Leave-Start": string;
@@ -96,11 +96,10 @@ export interface MatchData {
   "Climb-Status": string;
   "No-Climb-Reason": string;
   "Driver-Skill": string;
-  "Defense-Rating": string;
+  "Defense Rating": string;
   "Died-YN": string;
   "Tipped-YN": string;
   Comments: string;
-  [key: string]: string;
 }
 
 export interface ScoutingData {
@@ -108,8 +107,42 @@ export interface ScoutingData {
 }
 
 export function getMatchData(dataSource: DataSource = "live"): MatchData[] {
-  const data = dataSource === "live" ? scoutingData : preScoutingData;
-  return data.matches as MatchData[];
+  const rawData = dataSource === "live" ? scoutingData : preScoutingData;
+  const data = rawData.matches;
+  
+  return data.map((match: any): MatchData => ({
+    Scouter: match.Scouter || '',
+    Event: match.Event || '',
+    Robot: match.Robot || '',
+    "Match-Level": match["Match-Level"] || '',
+    "Match-Number": match["Match-Number"] || '',
+    "Team-Number": match["Team-Number"] || '',
+    "Auton-Position": match["Auton-Position"] || '',
+    "Auton-Leave-Start": match["Auton-Leave-Start"] || '',
+    "Auton-Coral-L4": match["Auton-Coral-L4"] || '',
+    "Auton-Coral-L3": match["Auton-Coral-L3"] || '',
+    "Auton-Coral-L2": match["Auton-Coral-L2"] || '',
+    "Auton-Coral-L1": match["Auton-Coral-L1"] || '',
+    "Algae-Removed- from-Reef": match["Algae-Removed- from-Reef"] || '',
+    "Auton-Algae-Processor": match["Auton-Algae-Processor"] || '',
+    "Auton-Algae-Net": match["Auton-Algae-Net"] || '',
+    "Teleop-Coral-L4": match["Teleop-Coral-L4"] || '',
+    "Teleop-Coral-L3": match["Teleop-Coral-L3"] || '',
+    "Teleop-Coral-L2": match["Teleop-Coral-L2"] || '',
+    "Teleop-Coral-L1": match["Teleop-Coral-L1"] || '',
+    "TeleOp-Removed- from-Reef": match["TeleOp-Removed- from-Reef"] || '',
+    "Teleop-Algae-Processor": match["Teleop-Algae-Processor"] || '',
+    "Teleop-Algae-Net": match["Teleop-Algae-Net"] || '',
+    "Defense-Played-on-Robot": match["Defense-Played-on-Robot"] || '',
+    "Ground-Pick-Up": match["Ground-Pick-Up"] || '',
+    "Climb-Status": match["Climb-Status"] || '',
+    "No-Climb-Reason": match["No-Climb-Reason"] || '',
+    "Driver-Skill": match["Driver-Skill"] || '',
+    "Defense Rating": match["Defense Rating"] || '0',
+    "Died-YN": match["Died-YN"] || '',
+    "Tipped-YN": match["Tipped-YN"] || '',
+    Comments: match.Comments || ''
+  }));
 }
 
 export function getTeamData(teamNumber: number, dataSource: DataSource = "live"): MatchData[] {
@@ -121,9 +154,9 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
     const converted = {
       Scouter: match.Scouter || '',
       Event: match.Event || '',
+      Robot: match.Robot || '',
       "Match-Level": match["Match-Level"] || '',
       "Match-Number": match["Match-Number"] || '',
-      Robot: match.Robot || '',
       "Team-Number": match["Team-Number"] || '',
       "Auton-Position": match["Auton-Position"] || '',
       "Auton-Leave-Start": match["Auton-Leave-Start"] || '',
@@ -150,15 +183,11 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
         'n',
       "No-Climb-Reason": '',
       "Driver-Skill": match["Driver Skill"] ? 
-        (parseInt(match["Driver Skill"]) >= 4 ? 'e' :
-         parseInt(match["Driver Skill"]) >= 3 ? 'g' :
-         parseInt(match["Driver Skill"]) >= 2 ? 'f' : 'p') :
-        'p',
-      "Defense-Rating": match["Defense Rating"] && match["Defense Rating"] !== '' ?
-        (parseInt(match["Defense Rating"]) >= 4 ? 'e' :
-         parseInt(match["Defense Rating"]) >= 3 ? 'g' :
-         parseInt(match["Defense Rating"]) >= 2 ? 'f' : 'p') :
-        'p',
+        (match["Driver Skill"] === '2' ? '2' :
+         match["Driver Skill"] === '3' ? '3' :
+         match["Driver Skill"] === '1' ? '1' : '0') :
+        '0',
+      "Defense-Rating": match["Defense Rating"] || '0',
       "Died-YN": match["Died"] || 'n',
       "Tipped-YN": match["Tippy"] || '0',
       Comments: match.Comments || ''
@@ -357,8 +386,39 @@ export function calculateTeamAverages(
   const climbAttempts = teamData.filter((m) => m["Climb-Status"] !== 'n').length;
   const diedMatches = teamData.filter((m) => m["Died-YN"] === 'y').length;
   const tippedMatches = teamData.filter((m) => m["Tipped-YN"] === '1').length;
-  const driverSkillAverage = average(teamData.map((m) => m["Driver-Skill"] === 'e' ? 3 : m["Driver-Skill"] === 'g' ? 2 : m["Driver-Skill"] === 'f' ? 1 : 0));
-  const defenseRatingAverage = average(teamData.map((m) => m["Defense-Rating"] === 'e' ? 3 : m["Defense-Rating"] === 'g' ? 2 : m["Defense-Rating"] === 'f' ? 1 : 0));
+  const driverSkillAverage = average(
+    teamData.map((m) => {
+      const skill = m["Driver-Skill"];
+      if (!skill || skill === '') return 0;
+      return parseInt(skill) || 0;
+    }).filter(skill => skill > 0)
+  );
+  const defenseRatingAverage = average(
+    teamData.map((m) => {
+      const rating = m["Defense Rating"];
+      if (!rating || rating === '') return 0;
+      const numRating = Number(rating);
+      if (!isNaN(numRating)) {
+        return numRating >= 0 && numRating <= 3 ? numRating : 0;
+      }
+      switch(rating.toLowerCase()) {
+        case 'e':
+        case 'excellent':
+        case '3':
+          return 3;
+        case 'g':
+        case 'good':
+        case '2':
+          return 2;
+        case 'f':
+        case 'fair':
+        case '1':
+          return 1;
+        default:
+          return 0;
+      }
+    }).filter(rating => rating > 0)
+  );
 
   return {
     totalMatches,

@@ -110,6 +110,7 @@ export default function TeamPage() {
     
     if (teamFromUrl) {
       setTeamNumber(teamFromUrl);
+      localStorage.setItem('teamNumber', teamFromUrl);
     } else if (savedTeam) {
       setTeamNumber(savedTeam);
     }
@@ -139,6 +140,7 @@ export default function TeamPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    localStorage.setItem('teamNumber', teamNumber);
     updateTeamData();
   };
 
@@ -264,31 +266,34 @@ export default function TeamPage() {
               onSourceChange={handleDataSourceChange}
             />
           </div>
-          <form onSubmit={handleSubmit} className="flex gap-4 items-center">
-            <Input
-              type="number"
-              placeholder="Enter team number..."
-              value={teamNumber}
-              onChange={(e) => setTeamNumber(e.target.value)}
-              className="max-w-[200px] bg-[#1A1A1A] border-gray-800 text-white"
-            />
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Loading...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <SearchIcon className="w-4 h-4" />
-                  Search
-                </span>
-              )}
-            </Button>
+          <form onSubmit={handleSubmit} className="flex flex-col items-end gap-1">
+            <div className="flex gap-4 items-center">
+              <Input
+                type="number"
+                placeholder="Enter team number..."
+                value={teamNumber}
+                onChange={(e) => setTeamNumber(e.target.value)}
+                className="max-w-[200px] bg-[#1A1A1A] border-gray-800 text-white"
+              />
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Loading...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <SearchIcon className="w-4 h-4" />
+                    Search
+                  </span>
+                )}
+              </Button>
+            </div>
+            <span className="text-xs text-gray-400 text-right">Press search to freeze page on this team,<br />otherwise it will revert to previously searched team</span>
           </form>
         </div>
 
@@ -694,7 +699,7 @@ export default function TeamPage() {
                         <TableCell className="text-gray-300">{getClimbStatus(match["Climb-Status"])}</TableCell>
                         <TableCell className="text-gray-300">{match["No-Climb-Reason"]}</TableCell>
                         <TableCell className="text-gray-300">{match["Driver-Skill"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Defense-Rating"]}</TableCell>
+                        <TableCell className="text-gray-300">{match["Defense Rating"]}</TableCell>
                         <TableCell className="text-gray-300">{match["Died-YN"]}</TableCell>
                         <TableCell className="text-gray-300">{match["Tipped-YN"]}</TableCell>
                         <TableCell className="text-gray-300 min-w-[200px]">{match.Comments}</TableCell>

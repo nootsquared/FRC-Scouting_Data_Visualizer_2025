@@ -261,7 +261,7 @@ const DataImport: React.FC = () => {
       </Typography>
       
       <UploadArea
-        title="Pit Scouting Data"
+        title="Pit Scouting Data "
         getRootProps={getPitRootProps}
         getInputProps={getPitInputProps}
         state={pitScouting}

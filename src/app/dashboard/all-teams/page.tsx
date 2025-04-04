@@ -343,7 +343,7 @@ export default function AllTeamsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={[...rankings]
-                    .filter(team => team.defenseRating > 0 || dataSource === "live")
+                    .filter(team => team.defenseRating > 0)
                     .sort((a, b) => b.defenseRating - a.defenseRating)}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
@@ -366,11 +366,12 @@ export default function AllTeamsPage() {
                     labelStyle={{ color: '#F3F4F6', fontWeight: 600 }}
                     itemStyle={{ color: '#E5E7EB' }}
                     formatter={(value: number) => {
-                      if (value === 0) return ['Poor', 'Defense Rating'];
-                      if (value === 1) return ['Fair', 'Defense Rating'];
-                      if (value === 2) return ['Good', 'Defense Rating'];
-                      if (value === 3) return ['Excellent', 'Defense Rating'];
-                      return [value.toFixed(2), 'Defense Rating'];
+                      const rating = value.toFixed(2);
+                      let label = 'Poor';
+                      if (value >= 2.5) label = 'Excellent';
+                      else if (value >= 1.5) label = 'Good';
+                      else if (value >= 0.5) label = 'Fair';
+                      return [`${rating} - ${label}`, 'Defense Rating'];
                     }}
                   />
                   <Legend />
@@ -378,6 +379,7 @@ export default function AllTeamsPage() {
                     dataKey="defenseRating"
                     name="Defense Rating"
                     fill="#F59E0B"
+                    isAnimationActive={false}
                   />
                 </BarChart>
               </ResponsiveContainer>
