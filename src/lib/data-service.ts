@@ -187,7 +187,7 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
          match["Driver Skill"] === '3' ? '3' :
          match["Driver Skill"] === '1' ? '1' : '0') :
         '0',
-      "Defense-Rating": match["Defense Rating"] || '0',
+      "Defense Rating": match["Defense Rating"] || '0',
       "Died-YN": match["Died"] || 'n',
       "Tipped-YN": match["Tippy"] || '0',
       Comments: match.Comments || ''
