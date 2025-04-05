@@ -1,8 +1,8 @@
 'use client';
 
-import { LucideIcon } from 'lucide-react';
+import { LucideProps } from 'lucide-react';
 
-export const TargetIcon: LucideIcon = ({ size = 24, ...props }) => (
+export const TargetIcon = ({ size = 24, ...props }: LucideProps) => (
   <svg
     width={size}
     height={size}
