@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableCell, TableRow, TableHead } from '@/components/ui/table';
