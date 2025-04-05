@@ -172,7 +172,10 @@ export default function TargetedPlanningPage() {
       setUpcomingMatches(upcoming);
       
       // Save valid TBA key
-      localStorage.setItem('tbaKey', tbaKey);
+      const trimmedKey = tbaKey.trim();
+      setTbaKey(trimmedKey);
+      localStorage.setItem('tbaKey', trimmedKey);
+      console.log('Saving TBA API Key (first 5 chars):', trimmedKey.substring(0, 5));
     } catch (err) {
       console.error('Error fetching matches:', err);
       setError('Failed to fetch matches. Please check your API key and event code and try again.');
@@ -286,13 +289,19 @@ export default function TargetedPlanningPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // Trim the API key before saving and using it
+    const trimmedKey = tbaKey.trim();
+    setTbaKey(trimmedKey);
+    localStorage.setItem('tbaKey', trimmedKey);
+    console.log('Saving TBA API Key (first 5 chars):', trimmedKey.substring(0, 5));
     fetchMatches();
   };
 
   const handleEventCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEventCode = e.target.value;
+    const newEventCode = e.target.value.trim();
     setEventCode(newEventCode);
     localStorage.setItem('eventCode', newEventCode);
+    console.log('Saving Event Code:', newEventCode);
   };
 
   const handleTeamClick = (teamNum: string) => {

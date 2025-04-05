@@ -184,13 +184,20 @@ export default function MatchSummaryPage() {
         throw new Error("Event code not found. Please set it in the Targeted Planning page.");
       }
       
-      console.log(`Fetching match data for ${eventCode}_qm${matchNumber} with key: ${tbaKey.substring(0, 5)}...`);
+      // Debug logging
+      console.log('TBA API Key length:', tbaKey.length);
+      console.log('TBA API Key first 5 chars:', tbaKey.substring(0, 5));
+      console.log('Event Code:', eventCode);
+      console.log('Match Number:', matchNumber);
+      
+      const url = `https://www.thebluealliance.com/api/v3/match/${eventCode}_qm${matchNumber}`;
+      console.log('Request URL:', url);
       
       const response = await fetch(
-        `https://www.thebluealliance.com/api/v3/match/${eventCode}_qm${matchNumber}`,
+        url,
         {
           headers: {
-            "X-TBA-Auth-Key": tbaKey,
+            "X-TBA-Auth-Key": tbaKey.trim(), // Trim any whitespace
           },
         }
       );
