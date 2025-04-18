@@ -72,16 +72,6 @@ const tooltipItemStyle = {
   padding: '2px 0',
 };
 
-// Add this type for RP data
-interface RPStats {
-  coopRP: number;
-  autoRP: number;
-  coralRP: number;
-  bargeRP: number;
-  totalRP: number;
-  avgRPPerMatch: number;
-}
-
 export default function TeamPage() {
   const {
     teamNumber,
@@ -157,21 +147,25 @@ export default function TeamPage() {
   };
 
   const prepareCoralData = (matches: MatchData[], phase: 'Auton' | 'Teleop') => {
-    return matches.map((match) => ({
-      match: `Match ${match["Match-Number"]}`,
-      L4: parseInt(match[`${phase}-Coral-L4`]) || 0,
-      L3: parseInt(match[`${phase}-Coral-L3`]) || 0,
-      L2: parseInt(match[`${phase}-Coral-L2`]) || 0,
-      L1: parseInt(match[`${phase}-Coral-L1`]) || 0,
-    }));
+    return matches
+      .sort((a, b) => parseInt(a["Match-Number"]) - parseInt(b["Match-Number"]))
+      .map((match) => ({
+        match: `Match ${match["Match-Number"]}`,
+        L4: parseInt(match[`${phase}-Coral-L4`]) || 0,
+        L3: parseInt(match[`${phase}-Coral-L3`]) || 0,
+        L2: parseInt(match[`${phase}-Coral-L2`]) || 0,
+        L1: parseInt(match[`${phase}-Coral-L1`]) || 0,
+      }));
   };
 
   const prepareAlgaeData = (matches: MatchData[], phase: 'Auton' | 'Teleop') => {
-    return matches.map((match) => ({
-      match: `Match ${match["Match-Number"]}`,
-      Processor: parseInt(match[`${phase}-Algae-Processor`]) || 0,
-      Net: parseInt(match[`${phase === 'Auton' ? 'Auton-Algae-Net' : 'Teleop-Algae-Net'}`]) || 0,
-    }));
+    return matches
+      .sort((a, b) => parseInt(a["Match-Number"]) - parseInt(b["Match-Number"]))
+      .map((match) => ({
+        match: `Match ${match["Match-Number"]}`,
+        Processor: parseInt(match[`${phase}-Algae-Processor`]) || 0,
+        Net: parseInt(match[`${phase === 'Auton' ? 'Auton-Algae-Net' : 'Teleop-Algae-Net'}`]) || 0,
+      }));
   };
 
   const emptyData = Array(5).fill({
@@ -193,62 +187,6 @@ export default function TeamPage() {
       case 'x': return '❌ Failed';
       default: return '❓ Unknown';
     }
-  };
-
-  // Add RP calculation function
-  const calculateRPStats = (matches: MatchData[]): RPStats => {
-    if (!matches || matches.length === 0) return {
-      coopRP: 0,
-      autoRP: 0,
-      coralRP: 0,
-      bargeRP: 0,
-      totalRP: 0,
-      avgRPPerMatch: 0
-    };
-
-    const coopRP = matches.filter(m => {
-      // At least 2 Algae scored in each Processor
-      const autonProcessor = parseInt(m["Auton-Algae-Processor"]) || 0;
-      const teleopProcessor = parseInt(m["Teleop-Algae-Processor"]) || 0;
-      return autonProcessor >= 2 && teleopProcessor >= 2;
-    }).length;
-
-    const autoRP = matches.filter(m => {
-      // At least 1 Coral scored in Auto
-      const autoCorals = (parseInt(m["Auton-Coral-L1"]) || 0) +
-                        (parseInt(m["Auton-Coral-L2"]) || 0) +
-                        (parseInt(m["Auton-Coral-L3"]) || 0) +
-                        (parseInt(m["Auton-Coral-L4"]) || 0);
-      return autoCorals > 0;
-    }).length;
-
-    const coralRP = matches.filter(m => {
-      // At least 3 Coral scored per level
-      const l1Total = (parseInt(m["Auton-Coral-L1"]) || 0) + (parseInt(m["Teleop-Coral-L1"]) || 0);
-      const l2Total = (parseInt(m["Auton-Coral-L2"]) || 0) + (parseInt(m["Teleop-Coral-L2"]) || 0);
-      const l3Total = (parseInt(m["Auton-Coral-L3"]) || 0) + (parseInt(m["Teleop-Coral-L3"]) || 0);
-      const l4Total = (parseInt(m["Auton-Coral-L4"]) || 0) + (parseInt(m["Teleop-Coral-L4"]) || 0);
-      return l1Total >= 3 && l2Total >= 3 && l3Total >= 3 && l4Total >= 3;
-    }).length;
-
-    const bargeRP = matches.filter(m => {
-      // At least 14 Barge points
-      const bargePoints = ((parseInt(m["Auton-Algae-Net"]) || 0) + 
-                          (parseInt(m["Teleop-Algae-Net"]) || 0)) * 4;
-      return bargePoints >= 14;
-    }).length;
-
-    const totalRP = coopRP + autoRP + coralRP + bargeRP;
-    const avgRPPerMatch = totalRP / matches.length;
-
-    return {
-      coopRP,
-      autoRP,
-      coralRP,
-      bargeRP,
-      totalRP,
-      avgRPPerMatch
-    };
   };
 
   return (
@@ -317,34 +255,77 @@ export default function TeamPage() {
           </Card>
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-white">Successful Climbs</CardTitle>
-              <CardDescription className="text-gray-400">Total successful climbs</CardDescription>
+              <CardTitle className="text-2xl text-white">Tele Cycles</CardTitle>
+              <CardDescription className="text-gray-400">Average cycles per match</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">{teamAverages?.successfulClimbs || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-[#1A1A1A] border-gray-800">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-white">L4 Scoring</CardTitle>
-              <CardDescription className="text-gray-400">Average L4 corals per match</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {((teamAverages?.autonL4Average || 0) + (teamAverages?.teleopL4Average || 0)).toFixed(1)}
+              <div className="text-3xl font-bold text-white">{teamAverages?.teleCycles.toFixed(1) || '0.0'}</div>
+              <div className="text-sm text-gray-400 mt-1">
+                Avg time: {teamAverages?.averageCycleTime.toFixed(1) || '0.0'}s
               </div>
             </CardContent>
           </Card>
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-white">Reliability</CardTitle>
-              <CardDescription className="text-gray-400">Matches without issues</CardDescription>
+              <CardTitle className="text-2xl text-white">Deep Climb %</CardTitle>
+              <CardDescription className="text-gray-400">Percentage of successful deep climbs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{teamAverages?.deepClimbPercentage.toFixed(1) || '0.0'}%</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-white">Auto Corals</CardTitle>
+              <CardDescription className="text-gray-400">Average corals in auto</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{teamAverages?.autoCorals.toFixed(1) || '0.0'}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8">
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-white">Tele Corals</CardTitle>
+              <CardDescription className="text-gray-400">Average corals in teleop</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{teamAverages?.teleCorals.toFixed(1) || '0.0'}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-white">Barge Algae</CardTitle>
+              <CardDescription className="text-gray-400">Average algae in barge</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{teamAverages?.bargeAlgae.toFixed(1) || '0.0'}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-white">Processor Algae</CardTitle>
+              <CardDescription className="text-gray-400">Average algae in processor</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{teamAverages?.processorAlgae.toFixed(1) || '0.0'}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-white">Total EPA</CardTitle>
+              <CardDescription className="text-gray-400">Average points per match</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                {teamAverages ? 
-                  `${(((teamAverages.totalMatches - teamAverages.diedMatches - teamAverages.tippedMatches) / teamAverages.totalMatches) * 100).toFixed(0)}%` 
-                  : '0%'}
+                {teamAverages?.totalEPA?.toFixed(1) || '0.0'}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                Auto: {teamAverages?.totalAutonScore?.toFixed(1) || '0.0'} | 
+                Tele: {teamAverages?.totalTeleopScore?.toFixed(1) || '0.0'} | 
+                End: {teamAverages?.climbScore?.toFixed(1) || '0.0'}
               </div>
             </CardContent>
           </Card>
@@ -364,31 +345,31 @@ export default function TeamPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">L4:</span>
-                    <span className="text-white">{teamAverages?.autonL4Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.autonL4Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">L3:</span>
-                    <span className="text-white">{teamAverages?.autonL3Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.autonL3Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">L2:</span>
-                    <span className="text-white">{teamAverages?.autonL2Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.autonL2Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">L1:</span>
-                    <span className="text-white">{teamAverages?.autonL1Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.autonL1Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Algae Processor:</span>
-                    <span className="text-white">{teamAverages?.autonAlgaeProcessor.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.autonAlgaeProcessor?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Algae Net:</span>
-                    <span className="text-white">{teamAverages?.autonAlgaeNet.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.autonAlgaeNet?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Total Score:</span>
-                    <span className="text-white font-bold">{teamAverages?.totalAutonScore.toFixed(2) || '0.00'}</span>
+                    <span className="text-white font-bold">{teamAverages?.totalAutonScore?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>
               </div>
@@ -399,31 +380,31 @@ export default function TeamPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-400">L4:</span>
-                    <span className="text-white">{teamAverages?.teleopL4Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.teleopL4Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">L3:</span>
-                    <span className="text-white">{teamAverages?.teleopL3Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.teleopL3Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">L2:</span>
-                    <span className="text-white">{teamAverages?.teleopL2Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.teleopL2Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">L1:</span>
-                    <span className="text-white">{teamAverages?.teleopL1Average.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.teleopL1Average?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Algae Processor:</span>
-                    <span className="text-white">{teamAverages?.teleopAlgaeProcessor.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.teleopAlgaeProcessor?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Algae Net:</span>
-                    <span className="text-white">{teamAverages?.teleopAlgaeNet.toFixed(2) || '0.00'}</span>
+                    <span className="text-white">{teamAverages?.teleopAlgaeNet?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Total Score:</span>
-                    <span className="text-white font-bold">{teamAverages?.totalTeleopScore.toFixed(2) || '0.00'}</span>
+                    <span className="text-white font-bold">{teamAverages?.totalTeleopScore?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>
               </div>
@@ -442,11 +423,11 @@ export default function TeamPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Driver Skill:</span>
-                    <span className="text-white">{teamAverages?.driverSkillAverage.toFixed(2) || '0.00'}/3.00</span>
+                    <span className="text-white">{teamAverages?.driverSkillAverage?.toFixed(2) || '0.00'}/3.00</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Defense Rating:</span>
-                    <span className="text-white">{teamAverages?.defenseRatingAverage.toFixed(2) || '0.00'}/3.00</span>
+                    <span className="text-white">{teamAverages?.defenseRatingAverage?.toFixed(2) || '0.00'}/3.00</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Times Died:</span>
@@ -458,10 +439,61 @@ export default function TeamPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Total Algae Score:</span>
-                    <span className="text-white font-bold">{teamAverages?.totalAlgaeScore.toFixed(2) || '0.00'}</span>
+                    <span className="text-white font-bold">{teamAverages?.totalAlgaeScore?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Match Performance Graph */}
+        <Card className="bg-[#1A1A1A] border-gray-800 mt-12">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white">Match Performance</CardTitle>
+            <CardDescription className="text-gray-400">Total coral teleop and algae per match</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={teamAverages?.matchEPAs.sort((a: { matchNumber: string }, b: { matchNumber: string }) => 
+                    parseInt(a.matchNumber) - parseInt(b.matchNumber)
+                  )}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis 
+                    dataKey="matchNumber" 
+                    stroke="#9CA3AF"
+                    tickFormatter={(value) => `Match ${value}`}
+                  />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip 
+                    contentStyle={tooltipStyle}
+                    labelStyle={tooltipLabelStyle}
+                    itemStyle={tooltipItemStyle}
+                    formatter={(value: number, name: string) => [value.toFixed(0), name]}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="totalCorals"
+                    name="Total Coral Teleop"
+                    stroke="#3B82F6"
+                    fill="#3B82F6"
+                    fillOpacity={0.2}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="totalAlgae"
+                    name="Total Algae"
+                    stroke="#10B981"
+                    fill="#10B981"
+                    fillOpacity={0.2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -568,61 +600,6 @@ export default function TeamPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* RP Statistics */}
-        <Card className="bg-[#1A1A1A] border-gray-800">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white">Ranking Point Analysis</CardTitle>
-            <CardDescription className="text-gray-400">Performance in achieving ranking points</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {teamData ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">RP Achievement</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Coopertition RP</span>
-                      <span className="text-white font-medium">{calculateRPStats(teamData).coopRP}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Auto RP</span>
-                      <span className="text-white font-medium">{calculateRPStats(teamData).autoRP}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Coral RP</span>
-                      <span className="text-white font-medium">{calculateRPStats(teamData).coralRP}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Barge RP</span>
-                      <span className="text-white font-medium">{calculateRPStats(teamData).bargeRP}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">RP Statistics</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Total RPs</span>
-                      <span className="text-white font-medium">{calculateRPStats(teamData).totalRP}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Average RP/Match</span>
-                      <span className="text-white font-medium">
-                        {calculateRPStats(teamData).avgRPPerMatch.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                Enter a team number to view RP statistics
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Match History Table - Modified to remove extra scrollbar */}
         <Card className="bg-[#1A1A1A] border-gray-800">

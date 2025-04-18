@@ -151,7 +151,7 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
     (match) => match["Team-Number"] && parseInt(match["Team-Number"]) === teamNumber
   ).map(match => {
     // Create a new object with all required fields
-    const converted = {
+    const converted: MatchData = {
       Scouter: match.Scouter || '',
       Event: match.Event || '',
       Robot: match.Robot || '',
@@ -187,12 +187,12 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
          match["Driver Skill"] === '3' ? '3' :
          match["Driver Skill"] === '1' ? '1' : '0') :
         '0',
-      "Defense-Rating": match["Defense Rating"] || '0',
+      "Defense Rating": match["Defense Rating"] || '0',
       "Died-YN": match["Died"] || 'n',
       "Tipped-YN": match["Tippy"] || '0',
       Comments: match.Comments || ''
     };
-    return converted as MatchData;
+    return converted;
   });
 }
 
@@ -320,141 +320,238 @@ export function calculateTeamAverages(
     }
   };
 
-  const autonL4Average = processData(
-    teamData.map((m) => parseInt(m["Auton-Coral-L4"]) || 0),
+  // Calculate whole match EPA for each match
+  const matchEPAs = teamData.map(match => {
+    // Calculate total corals and algae for each match
+    const totalCorals = 
+      (parseInt(match["Auton-Coral-L1"]) || 0) +
+      (parseInt(match["Auton-Coral-L2"]) || 0) +
+      (parseInt(match["Auton-Coral-L3"]) || 0) +
+      (parseInt(match["Auton-Coral-L4"]) || 0) +
+      (parseInt(match["Teleop-Coral-L1"]) || 0) +
+      (parseInt(match["Teleop-Coral-L2"]) || 0) +
+      (parseInt(match["Teleop-Coral-L3"]) || 0) +
+      (parseInt(match["Teleop-Coral-L4"]) || 0);
+
+    const totalAlgae = 
+      (parseInt(match["Auton-Algae-Processor"]) || 0) +
+      (parseInt(match["Auton-Algae-Net"]) || 0) +
+      (parseInt(match["Teleop-Algae-Processor"]) || 0) +
+      (parseInt(match["Teleop-Algae-Net"]) || 0);
+
+    return {
+      matchNumber: match["Match-Number"],
+      totalCorals,
+      totalAlgae,
+      epa: calculateEPA(match, false) + calculateEPA(match, true) // Total EPA for the match
+    };
+  });
+
+  // Calculate tele cycles (barge + reef cycles)
+  const teleCycles = processData(
+    teamData.map(match => {
+      const bargeCycles = (parseInt(match["Teleop-Algae-Net"]) || 0);
+      const reefCycles = (parseInt(match["Teleop-Coral-L1"]) || 0) +
+                        (parseInt(match["Teleop-Coral-L2"]) || 0) +
+                        (parseInt(match["Teleop-Coral-L3"]) || 0) +
+                        (parseInt(match["Teleop-Coral-L4"]) || 0);
+      return bargeCycles + reefCycles;
+    }),
     mode,
     zeroHandling
   );
-  const autonL3Average = processData(
-    teamData.map((m) => parseInt(m["Auton-Coral-L3"]) || 0),
+
+  // Calculate deep climb percentage
+  const deepClimbs = teamData.filter(match => match["Climb-Status"] === 'd').length;
+  const deepClimbPercentage = (deepClimbs / totalMatches) * 100;
+
+  // Calculate auto and tele corals
+  const autoCorals = processData(
+    teamData.map(match => 
+      (parseInt(match["Auton-Coral-L1"]) || 0) +
+      (parseInt(match["Auton-Coral-L2"]) || 0) +
+      (parseInt(match["Auton-Coral-L3"]) || 0) +
+      (parseInt(match["Auton-Coral-L4"]) || 0)
+    ),
     mode,
     zeroHandling
   );
-  const autonL2Average = processData(
-    teamData.map((m) => parseInt(m["Auton-Coral-L2"]) || 0),
+
+  const teleCorals = processData(
+    teamData.map(match => 
+      (parseInt(match["Teleop-Coral-L1"]) || 0) +
+      (parseInt(match["Teleop-Coral-L2"]) || 0) +
+      (parseInt(match["Teleop-Coral-L3"]) || 0) +
+      (parseInt(match["Teleop-Coral-L4"]) || 0)
+    ),
     mode,
     zeroHandling
   );
-  const autonL1Average = processData(
-    teamData.map((m) => parseInt(m["Auton-Coral-L1"]) || 0),
+
+  // Calculate barge and processor algae
+  const bargeAlgae = processData(
+    teamData.map(match => 
+      (parseInt(match["Auton-Algae-Net"]) || 0) +
+      (parseInt(match["Teleop-Algae-Net"]) || 0)
+    ),
     mode,
     zeroHandling
   );
-  const teleopL4Average = processData(
-    teamData.map((m) => parseInt(m["Teleop-Coral-L4"]) || 0),
+
+  const processorAlgae = processData(
+    teamData.map(match => 
+      (parseInt(match["Auton-Algae-Processor"]) || 0) +
+      (parseInt(match["Teleop-Algae-Processor"]) || 0)
+    ),
     mode,
     zeroHandling
   );
-  const teleopL3Average = processData(
-    teamData.map((m) => parseInt(m["Teleop-Coral-L3"]) || 0),
-    mode,
-    zeroHandling
-  );
-  const teleopL2Average = processData(
-    teamData.map((m) => parseInt(m["Teleop-Coral-L2"]) || 0),
-    mode,
-    zeroHandling
-  );
-  const teleopL1Average = processData(
-    teamData.map((m) => parseInt(m["Teleop-Coral-L1"]) || 0),
-    mode,
-    zeroHandling
-  );
-  
-  const autonAlgaeProcessor = processData(
-    teamData.map((m) => parseInt(m["Auton-Algae-Processor"]) || 0),
-    mode,
-    zeroHandling
-  );
-  const autonAlgaeNet = processData(
-    teamData.map((m) => parseInt(m["Auton-Algae-Net"]) || 0),
-    mode,
-    zeroHandling
-  );
-  const teleopAlgaeProcessor = processData(
-    teamData.map((m) => parseInt(m["Teleop-Algae-Processor"]) || 0),
-    mode,
-    zeroHandling
-  );
-  const teleopAlgaeNet = processData(
-    teamData.map((m) => parseInt(m["Teleop-Algae-Net"]) || 0),
-    mode,
-    zeroHandling
-  );
-  
-  const successfulClimbs = teamData.filter((m) => m["Climb-Status"] === 's' || m["Climb-Status"] === 'd').length;
-  const climbAttempts = teamData.filter((m) => m["Climb-Status"] !== 'n').length;
-  const diedMatches = teamData.filter((m) => m["Died-YN"] === 'y').length;
-  const tippedMatches = teamData.filter((m) => m["Tipped-YN"] === '1').length;
-  const driverSkillAverage = average(
-    teamData.map((m) => {
-      const skill = m["Driver-Skill"];
-      if (!skill || skill === '') return 0;
-      return parseInt(skill) || 0;
-    }).filter(skill => skill > 0)
-  );
-  const defenseRatingAverage = average(
-    teamData.map((m) => {
-      const rating = m["Defense Rating"];
-      if (!rating || rating === '') return 0;
-      const numRating = Number(rating);
-      if (!isNaN(numRating)) {
-        return numRating >= 0 && numRating <= 3 ? numRating : 0;
-      }
-      switch(rating.toLowerCase()) {
-        case 'e':
-        case 'excellent':
-        case '3':
-          return 3;
-        case 'g':
-        case 'good':
-        case '2':
-          return 2;
-        case 'f':
-        case 'fair':
-        case '1':
-          return 1;
-        default:
-          return 0;
-      }
-    }).filter(rating => rating > 0)
-  );
+
+  // Calculate average cycle time (2:15 = 135 seconds)
+  const averageCycleTime = teleCycles > 0 ? 135 / teleCycles : 0;
 
   return {
     totalMatches,
-    autonL4Average,
-    autonL3Average,
-    autonL2Average,
-    autonL1Average,
-    teleopL4Average,
-    teleopL3Average,
-    teleopL2Average,
-    teleopL1Average,
-    autonAlgaeProcessor,
-    autonAlgaeNet,
-    teleopAlgaeProcessor,
-    teleopAlgaeNet,
-    successfulClimbs,
-    climbAttempts,
-    diedMatches,
-    tippedMatches,
-    driverSkillAverage,
-    defenseRatingAverage,
-    totalAutonScore: (
-      autonL4Average * 5 +
-      autonL3Average * 3 +
-      autonL2Average * 2 +
-      autonL1Average
+    teleCycles,
+    deepClimbPercentage,
+    autoCorals,
+    teleCorals,
+    bargeAlgae,
+    processorAlgae,
+    averageCycleTime,
+    matchEPAs,
+    successfulClimbs: teamData.filter((m) => m["Climb-Status"] === 's' || m["Climb-Status"] === 'd').length,
+    climbAttempts: teamData.filter((m) => m["Climb-Status"] !== 'n').length,
+    diedMatches: teamData.filter((m) => m["Died-YN"] === 'y').length,
+    tippedMatches: teamData.filter((m) => m["Tipped-YN"] === '1').length,
+    driverSkillAverage: average(
+      teamData.map((m) => {
+        const skill = m["Driver-Skill"];
+        if (!skill || skill === '') return 0;
+        return parseInt(skill) || 0;
+      }).filter(skill => skill > 0)
     ),
-    totalTeleopScore: (
-      teleopL4Average * 5 +
-      teleopL3Average * 3 +
-      teleopL2Average * 2 +
-      teleopL1Average
+    defenseRatingAverage: average(
+      teamData.map((m) => {
+        const rating = m["Defense Rating"];
+        if (!rating || rating === '') return 0;
+        const numRating = Number(rating);
+        if (!isNaN(numRating)) {
+          return numRating >= 0 && numRating <= 3 ? numRating : 0;
+        }
+        switch(rating.toLowerCase()) {
+          case 'e':
+          case 'excellent':
+          case '3':
+            return 3;
+          case 'g':
+          case 'good':
+          case '2':
+            return 2;
+          case 'f':
+          case 'fair':
+          case '1':
+            return 1;
+          default:
+            return 0;
+        }
+      }).filter(rating => rating > 0)
     ),
-    totalAlgaeScore: (
-      (autonAlgaeProcessor + teleopAlgaeProcessor) * 3 +
-      (autonAlgaeNet + teleopAlgaeNet) * 2
+    // Autonomous detailed stats
+    autonL4Average: processData(
+      teamData.map(match => parseInt(match["Auton-Coral-L4"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    autonL3Average: processData(
+      teamData.map(match => parseInt(match["Auton-Coral-L3"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    autonL2Average: processData(
+      teamData.map(match => parseInt(match["Auton-Coral-L2"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    autonL1Average: processData(
+      teamData.map(match => parseInt(match["Auton-Coral-L1"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    autonAlgaeProcessor: processData(
+      teamData.map(match => parseInt(match["Auton-Algae-Processor"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    autonAlgaeNet: processData(
+      teamData.map(match => parseInt(match["Auton-Algae-Net"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    totalAutonScore: processData(
+      teamData.map(match => calculateEPA(match, true)),
+      mode,
+      zeroHandling
+    ),
+    // Teleop detailed stats
+    teleopL4Average: processData(
+      teamData.map(match => parseInt(match["Teleop-Coral-L4"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    teleopL3Average: processData(
+      teamData.map(match => parseInt(match["Teleop-Coral-L3"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    teleopL2Average: processData(
+      teamData.map(match => parseInt(match["Teleop-Coral-L2"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    teleopL1Average: processData(
+      teamData.map(match => parseInt(match["Teleop-Coral-L1"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    teleopAlgaeProcessor: processData(
+      teamData.map(match => parseInt(match["Teleop-Algae-Processor"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    teleopAlgaeNet: processData(
+      teamData.map(match => parseInt(match["Teleop-Algae-Net"]) || 0),
+      mode,
+      zeroHandling
+    ),
+    totalTeleopScore: processData(
+      teamData.map(match => calculateEPA(match, false)),
+      mode,
+      zeroHandling
+    ),
+    // Climb score
+    climbScore: processData(
+      teamData.map(match => {
+        const status = match["Climb-Status"];
+        if (status === 'd') return 12;
+        if (status === 's') return 8;
+        if (status === 'p') return 4;
+        return 0;
+      }),
+      mode,
+      zeroHandling
+    ),
+    // Total EPA
+    totalEPA: processData(
+      teamData.map(match => 
+        calculateEPA(match, true) + 
+        calculateEPA(match, false) + 
+        (match["Climb-Status"] === 'd' ? 12 : 
+         match["Climb-Status"] === 's' ? 8 : 
+         match["Climb-Status"] === 'p' ? 4 : 0)
+      ),
+      mode,
+      zeroHandling
     ),
   };
 }
