@@ -59,9 +59,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen bg-[#0A0A0A]">
+    <div className="flex min-h-screen bg-[#0A0A0A] overflow-hidden">
       {/* Navigation Sidebar */}
-      <div className="fixed top-0 left-0 h-screen w-64 bg-[#0A0A0A] border-r border-gray-800 p-6 flex flex-col">
+      <div className="fixed top-0 left-0 h-screen w-64 bg-[#0A0A0A] border-r border-gray-800 p-6 flex flex-col z-10">
         {/* Logo/Brand */}
         <div className="flex items-center gap-2 mb-8">
           <span className="text-xl font-semibold text-white">Shark Scout</span>
@@ -99,7 +99,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 w-0 min-h-screen overflow-y-auto">
         {children}
       </div>
     </div>

@@ -355,7 +355,7 @@ export default function MatchAnalysisPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 bg-[#1A1A1A] text-white">
+    <div className="w-full p-4 bg-[#1A1A1A] text-white">
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-3xl font-bold text-white">Match Analysis</h1>
         <DataSourceSelector
