@@ -12,7 +12,6 @@ import { ProcessingMode, ZeroHandling } from "@/components/ui/data-processing-co
 import { DataProcessingControls } from "@/components/ui/data-processing-controls";
 import { useAppContext } from "@/lib/context/AppContext";
 
-// Define the TBA API response types
 interface TBAMatch {
   key: string;
   match_number: number;
@@ -28,23 +27,19 @@ interface TBAMatch {
   };
 }
 
-// Define team EPA data
 interface TeamEPAData {
   teamNumber: string;
   epa: number;
 }
 
-// Define alliance EPA data
 interface AllianceEPAData {
   teams: TeamEPAData[];
   totalEPA: number;
   winPercentage: number;
 }
 
-// Define EPA calculation methods
 type EPACalculationMethod = "average" | "median" | "highest" | "lowest";
 
-// Define team prediction data
 interface TeamPredictionData {
   teamNumber: string;
   auton: {
@@ -74,7 +69,6 @@ interface TeamPredictionData {
   matchCount: number;
 }
 
-// Define alliance prediction data
 interface AlliancePredictionData {
   teams: TeamPredictionData[];
   totalExpectedScore: number;
@@ -99,7 +93,6 @@ export default function MatchAnalysisPage() {
   const [redAllianceData, setRedAllianceData] = useState<AlliancePredictionData>({ teams: [], totalExpectedScore: 0, winPercentage: 0 });
   const [blueAllianceData, setBlueAllianceData] = useState<AlliancePredictionData>({ teams: [], totalExpectedScore: 0, winPercentage: 0 });
 
-  // Load saved values from localStorage
   useEffect(() => {
     const savedKey = localStorage.getItem('tbaKey');
     const savedEventCode = localStorage.getItem('eventCode');
@@ -120,7 +113,6 @@ export default function MatchAnalysisPage() {
     if (savedBlueAllianceData) setBlueAllianceData(JSON.parse(savedBlueAllianceData));
   }, []);
 
-  // Save state to localStorage when it changes
   useEffect(() => {
     if (matchNumber) localStorage.setItem('matchAnalysisMatchNumber', matchNumber);
     if (matchData) localStorage.setItem('matchAnalysisData', JSON.stringify(matchData));
@@ -128,25 +120,19 @@ export default function MatchAnalysisPage() {
     if (blueAllianceData) localStorage.setItem('matchAnalysisBlueAllianceData', JSON.stringify(blueAllianceData));
   }, [matchNumber, matchData, redAllianceData, blueAllianceData]);
 
-  // Memoize the processTeamPredictions function to prevent unnecessary re-renders
   const processTeamPredictions = useCallback((matchData: TBAMatch) => {
-    // Get team numbers from the match data
     const redTeamNumbers = matchData.alliances.red.team_keys.map(key => key.replace("frc", ""));
     const blueTeamNumbers = matchData.alliances.blue.team_keys.map(key => key.replace("frc", ""));
     
-    // Process predictions for each team
     const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling));
     const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling));
     
-    // Calculate total expected scores
     const redTotalScore = redTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
     const blueTotalScore = blueTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
     
-    // Calculate win percentage
     const redWinPercentage = calculateWinPercentage(redTotalScore, blueTotalScore);
     const blueWinPercentage = 100 - redWinPercentage;
     
-    // Update state
     setRedAllianceData({
       teams: redTeamPredictions,
       totalExpectedScore: redTotalScore,
@@ -160,7 +146,6 @@ export default function MatchAnalysisPage() {
     });
   }, [dataSource, processingMode, zeroHandling]);
 
-  // Function to fetch match data from TBA API
   const fetchMatchData = async () => {
     if (!matchNumber) return;
     
@@ -168,7 +153,6 @@ export default function MatchAnalysisPage() {
     setError(null);
     
     try {
-      // Use the TBA API key from localStorage
       if (!tbaKey) {
         throw new Error("TBA API key not found. Please set it in the Targeted Planning page.");
       }
@@ -206,22 +190,16 @@ export default function MatchAnalysisPage() {
     }
   };
 
-  // Function to check if there's enough data for a team
   const hasEnoughData = (teamData: MatchData[]): boolean => {
-    // Consider having at least 3 matches as enough data
     return teamData.length >= 3;
   };
 
-  // Function to generate team predictions
   const generateTeamPrediction = (teamNumber: string, dataSource: DataSource, method: ProcessingMode, zeroHandling: ZeroHandling): TeamPredictionData => {
-    // Get team data from the data service
     const teamData = getTeamData(parseInt(teamNumber), dataSource);
     const averages = calculateTeamAverages(teamData, method, zeroHandling);
     
-    // Check if we have enough data
     const enoughData = hasEnoughData(teamData);
     
-    // For autonomous phase - store the raw averages (number of gamepieces)
     const autonL4 = averages?.autonL4Average || 0;
     const autonL3 = averages?.autonL3Average || 0;
     const autonL2 = averages?.autonL2Average || 0;
@@ -229,16 +207,14 @@ export default function MatchAnalysisPage() {
     const autonProcessor = averages?.autonAlgaeProcessor || 0;
     const autonNet = averages?.autonAlgaeNet || 0;
     
-    // Calculate expected points for autonomous phase
     const autonExpectedPoints = 
-      autonL4 * 5 +  // L4 coral is worth 5 points in auton
-      autonL3 * 3 +  // L3 coral is worth 3 points in auton
-      autonL2 * 2 +  // L2 coral is worth 2 points in auton
-      autonL1 * 1 +  // L1 coral is worth 1 point in auton
-      autonProcessor * 3 +  // Algae in processor is worth 3 points
-      autonNet * 2;  // Algae in net is worth 2 points
+      autonL4 * 5 +
+      autonL3 * 3 +
+      autonL2 * 2 +
+      autonL1 * 1 +
+      autonProcessor * 3 +
+      autonNet * 2;
     
-    // For teleop phase - store the raw averages (number of gamepieces)
     const teleopL4 = averages?.teleopL4Average || 0;
     const teleopL3 = averages?.teleopL3Average || 0;
     const teleopL2 = averages?.teleopL2Average || 0;
@@ -246,23 +222,20 @@ export default function MatchAnalysisPage() {
     const teleopProcessor = averages?.teleopAlgaeProcessor || 0;
     const teleopNet = averages?.teleopAlgaeNet || 0;
     
-    // Calculate expected points for teleop phase
     const teleopExpectedPoints = 
-      teleopL4 * 5 +  // L4 coral is worth 5 points in teleop
-      teleopL3 * 3 +  // L3 coral is worth 3 points in teleop
-      teleopL2 * 2 +  // L2 coral is worth 2 points in teleop
-      teleopL1 * 1 +  // L1 coral is worth 1 point in teleop
-      teleopProcessor * 3 +  // Algae in processor is worth 3 points
-      teleopNet * 2;  // Algae in net is worth 2 points
+      teleopL4 * 5 +
+      teleopL3 * 3 +
+      teleopL2 * 2 +
+      teleopL1 * 1 +
+      teleopProcessor * 3 +
+      teleopNet * 2;
     
-    // Predict climb based on historical data
     const climbPrediction = predictClimb(teamData);
-    const endgameExpectedPoints = climbPrediction === 'd' ? 12 :  // Deep climb is worth 12 points
-                                 climbPrediction === 's' ? 8 :  // Shallow climb is worth 8 points
-                                 climbPrediction === 'p' ? 4 :  // Park is worth 4 points
-                                 0;  // No climb is worth 0 points
+    const endgameExpectedPoints = climbPrediction === 'd' ? 12 :
+                                 climbPrediction === 's' ? 8 :
+                                 climbPrediction === 'p' ? 4 :
+                                 0;
     
-    // Calculate total expected points
     const totalExpectedPoints = autonExpectedPoints + teleopExpectedPoints + endgameExpectedPoints;
     
     return {
@@ -272,7 +245,7 @@ export default function MatchAnalysisPage() {
         l3: autonL3,
         l2: autonL2,
         l1: autonL1,
-        barge: 0, // Not tracked in current data
+        barge: 0,
         processor: autonProcessor,
         expectedPoints: autonExpectedPoints
       },
@@ -281,7 +254,7 @@ export default function MatchAnalysisPage() {
         l3: teleopL3,
         l2: teleopL2,
         l1: teleopL1,
-        barge: 0, // Not tracked in current data
+        barge: 0,
         processor: teleopProcessor,
         expectedPoints: teleopExpectedPoints
       },
@@ -295,62 +268,52 @@ export default function MatchAnalysisPage() {
     };
   };
 
-  // Function to predict climb based on historical data
   const predictClimb = (teamData: MatchData[]): 'p' | 'd' | 's' | 'n' | 'x' => {
     if (teamData.length === 0) return 'n';
     
     const climbCounts = {
-      p: 0, // park
-      d: 0, // deep climb
-      s: 0, // shallow climb
-      n: 0, // not climb
-      x: 0  // fail climb
+      p: 0,
+      d: 0,
+      s: 0,
+      n: 0,
+      x: 0
     };
     
     teamData.forEach(match => {
       climbCounts[match["Climb-Status"] as keyof typeof climbCounts]++;
     });
     
-    // Find the most common climb status
     const maxCount = Math.max(...Object.values(climbCounts));
     const mostCommon = Object.entries(climbCounts).find(([_, count]) => count === maxCount)?.[0];
     
     return (mostCommon as 'p' | 'd' | 's' | 'n' | 'x') || 'n';
   };
 
-  // Function to calculate win percentage based on expected scores
   const calculateWinPercentage = (redScore: number, blueScore: number): number => {
     if (redScore + blueScore === 0) return 50;
     return Math.round((redScore / (redScore + blueScore)) * 100);
   };
 
-  // Handle data source changes
   const handleDataSourceChange = useCallback((newSource: DataSource) => {
     setDataSource(newSource);
   }, []);
 
-  // Handle processing mode changes
   const handleProcessingModeChange = useCallback((mode: ProcessingMode) => {
     setProcessingMode(mode);
   }, [setProcessingMode]);
 
-  // Handle zero handling changes
   const handleZeroHandlingChange = useCallback((handling: ZeroHandling) => {
     setZeroHandling(handling);
   }, [setZeroHandling]);
 
-  // Effect to reprocess predictions when relevant state changes
   useEffect(() => {
     if (matchData) {
       processTeamPredictions(matchData);
     }
   }, [matchData, processTeamPredictions]);
 
-  // Function to navigate to team analysis page
   const navigateToTeamAnalysis = (teamNumber: string) => {
-    // Save the team number to localStorage to ensure it's available when the team page loads
     localStorage.setItem('teamNumber', teamNumber);
-    // Navigate to the team analysis page with the team number in the URL
     router.push(`/dashboard/team?team=${teamNumber}`);
   };
 
@@ -384,7 +347,6 @@ export default function MatchAnalysisPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Match Input Section */}
         <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
           <h2 className="text-2xl font-semibold mb-6 text-white">Match Details</h2>
           <div className="space-y-6">
@@ -413,7 +375,6 @@ export default function MatchAnalysisPage() {
           </div>
         </div>
 
-        {/* Match Overview */}
         {matchData && (
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold mb-6 text-white">Match Overview</h2>
@@ -461,10 +422,8 @@ export default function MatchAnalysisPage() {
         )}
       </div>
 
-      {/* Team Predictions */}
       {matchData && (
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Red Alliance Predictions */}
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold mb-8 text-red-400">Red Alliance Predictions</h2>
             <div className="space-y-8">
@@ -488,7 +447,6 @@ export default function MatchAnalysisPage() {
                     </div>
                   )}
                   
-                  {/* Autonomous Section */}
                   <div className="mb-4">
                     <h4 className="font-medium mb-2 text-gray-300">Autonomous</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-300">
@@ -504,7 +462,6 @@ export default function MatchAnalysisPage() {
                     </div>
                   </div>
                   
-                  {/* Teleop Section */}
                   <div className="mb-4">
                     <h4 className="font-medium mb-2 text-gray-300">Teleop</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-300">
@@ -520,7 +477,6 @@ export default function MatchAnalysisPage() {
                     </div>
                   </div>
                   
-                  {/* Endgame Section */}
                   <div>
                     <h4 className="font-medium mb-2 text-gray-300">Endgame</h4>
                     <div className="text-sm text-gray-300">
@@ -539,7 +495,6 @@ export default function MatchAnalysisPage() {
                 </div>
               ))}
               
-              {/* Alliance Total */}
               <div className="border-t border-gray-700 pt-4">
                 <div className="text-lg font-bold text-white">
                   Alliance Total: {redAllianceData.totalExpectedScore.toFixed(1)} points
@@ -551,7 +506,6 @@ export default function MatchAnalysisPage() {
             </div>
           </div>
 
-          {/* Blue Alliance Predictions */}
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold mb-8 text-blue-400">Blue Alliance Predictions</h2>
             <div className="space-y-8">
@@ -575,7 +529,6 @@ export default function MatchAnalysisPage() {
                     </div>
                   )}
                   
-                  {/* Autonomous Section */}
                   <div className="mb-4">
                     <h4 className="font-medium mb-2 text-gray-300">Autonomous</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-300">
@@ -591,7 +544,6 @@ export default function MatchAnalysisPage() {
                     </div>
                   </div>
                   
-                  {/* Teleop Section */}
                   <div className="mb-4">
                     <h4 className="font-medium mb-2 text-gray-300">Teleop</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-300">
@@ -607,7 +559,6 @@ export default function MatchAnalysisPage() {
                     </div>
                   </div>
                   
-                  {/* Endgame Section */}
                   <div>
                     <h4 className="font-medium mb-2 text-gray-300">Endgame</h4>
                     <div className="text-sm text-gray-300">
@@ -626,7 +577,6 @@ export default function MatchAnalysisPage() {
                 </div>
               ))}
               
-              {/* Alliance Total */}
               <div className="border-t border-gray-700 pt-4">
                 <div className="text-lg font-bold text-white">
                   Alliance Total: {blueAllianceData.totalExpectedScore.toFixed(1)} points
@@ -643,7 +593,6 @@ export default function MatchAnalysisPage() {
   );
 }
 
-// Helper function to get climb status text
 const getClimbStatus = (status: string) => {
   switch (status) {
     case 'p': return '🅿️ Parked';
@@ -653,4 +602,4 @@ const getClimbStatus = (status: string) => {
     case 'x': return '❌ Fail Climb';
     default: return '❓ Unknown';
   }
-}; 
+};

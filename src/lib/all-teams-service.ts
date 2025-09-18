@@ -14,7 +14,6 @@ interface TeamRankingData {
   teleopAlgae: number;
   autonEPA: number;
   teleopEPA: number;
-  // Add fields for individual level scores
   autonL1: number;
   autonL2: number;
   autonL3: number;
@@ -27,20 +26,15 @@ interface TeamRankingData {
   teleopL4: number;
   teleopProcessor: number;
   teleopBarge: number;
-  // Add defensive rating
   defenseRating: number;
 }
 
-// Helper function to process defense rating
 const processDefenseRating = (rating: string | number | undefined): number => {
-  // Convert numeric ratings (0-3) directly
   if (!isNaN(Number(rating))) {
     const numRating = Number(rating);
     return numRating >= 0 && numRating <= 3 ? numRating : 0;
   }
-  // Handle empty or invalid values
   if (!rating || typeof rating !== 'string') return 0;
-  // Convert text ratings to numbers
   switch(rating.toLowerCase()) {
     case '3':
     case 'excellent':
@@ -90,7 +84,6 @@ const calculateTeamMetrics = (
     }
   };
 
-  // Calculate coral counts
   const autonL1 = processData(matches.map(m => parseInt(m["Auton-Coral-L1"]) || 0));
   const autonL2 = processData(matches.map(m => parseInt(m["Auton-Coral-L2"]) || 0));
   const autonL3 = processData(matches.map(m => parseInt(m["Auton-Coral-L3"]) || 0));
@@ -101,19 +94,16 @@ const calculateTeamMetrics = (
   const teleopL3 = processData(matches.map(m => parseInt(m["Teleop-Coral-L3"]) || 0));
   const teleopL4 = processData(matches.map(m => parseInt(m["Teleop-Coral-L4"]) || 0));
 
-  // Calculate algae counts
   const autonProcessor = processData(matches.map(m => parseInt(m["Auton-Algae-Processor"]) || 0));
   const autonNet = processData(matches.map(m => parseInt(m["Auton-Algae-Net"]) || 0));
   const teleopProcessor = processData(matches.map(m => parseInt(m["Teleop-Algae-Processor"]) || 0));
   const teleopNet = processData(matches.map(m => parseInt(m["Teleop-Algae-Net"]) || 0));
 
-  // Calculate totals
   const autonCoral = autonL1 + autonL2 + autonL3 + autonL4;
   const teleopCoral = teleopL1 + teleopL2 + teleopL3 + teleopL4;
   const autonAlgae = autonProcessor + autonNet;
   const teleopAlgae = teleopProcessor + teleopNet;
 
-  // Calculate EPA (using point values from the game manual)
   const autonEPA = (
     autonL1 * 3 +
     autonL2 * 4 +
@@ -132,7 +122,6 @@ const calculateTeamMetrics = (
     teleopNet * 4
   );
 
-  // Calculate defensive rating
   const defenseRatings = matches.map(m => {
     const rawRating = m["Defense Rating"];
     const processedRating = processDefenseRating(rawRating);
@@ -142,7 +131,7 @@ const calculateTeamMetrics = (
       matchNumber: m["Match-Number"]
     });
     return processedRating;
-  }).filter(rating => rating > 0); // Always exclude zero values for defense rating
+  }).filter(rating => rating > 0);
 
   const defenseRating = defenseRatings.length > 0 
     ? defenseRatings.reduce((a, b) => a + b, 0) / defenseRatings.length 
@@ -170,13 +159,13 @@ const calculateTeamMetrics = (
     autonL3,
     autonL4,
     autonProcessor,
-    autonBarge: 0, // Not implemented yet
+    autonBarge: 0,
     teleopL1,
     teleopL2,
     teleopL3,
     teleopL4,
     teleopProcessor,
-    teleopBarge: 0, // Not implemented yet
+    teleopBarge: 0,
     defenseRating,
   };
 };
@@ -186,10 +175,8 @@ export function getAllTeamsRankings(
   zeroHandling: ZeroHandling,
   dataSource: DataSource = "live"
 ): TeamRankingData[] {
-  // Get match data from the appropriate source
   const matchData = getMatchData(dataSource);
   
-  // Group matches by team
   const teamMatches = new Map<string, MatchData[]>();
   
   matchData.forEach(match => {
@@ -200,7 +187,6 @@ export function getAllTeamsRankings(
     teamMatches.get(teamNumber)?.push(match);
   });
 
-  // Calculate metrics for each team
   const rankings: TeamRankingData[] = [];
   teamMatches.forEach((matches, teamNumber) => {
     rankings.push(calculateTeamMetrics(matches, mode, zeroHandling));

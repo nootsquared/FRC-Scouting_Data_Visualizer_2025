@@ -34,7 +34,6 @@ export interface EndgameData {
   climbScore: number;
 }
 
-// Raw data from JSON file
 interface RawMatchData {
   Scouter: string;
   Event: string;
@@ -150,7 +149,6 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
   return data.matches.filter(
     (match) => match["Team-Number"] && parseInt(match["Team-Number"]) === teamNumber
   ).map(match => {
-    // Create a new object with all required fields
     const converted = {
       Scouter: match.Scouter || '',
       Event: match.Event || '',
@@ -192,7 +190,10 @@ export function getTeamData(teamNumber: number, dataSource: DataSource = "live")
       "Tipped-YN": match["Tippy"] || '0',
       Comments: match.Comments || ''
     };
-    return converted as MatchData;
+    return {
+      ...converted,
+      "Defense Rating": converted["Defense-Rating"]
+    };
   });
 }
 
@@ -293,25 +294,19 @@ export function calculateTeamAverages(
   const processData = (data: number[], mode: ProcessingMode, zeroHandling: ZeroHandling) => {
     let processedData = [...data];
     
-    // Handle zero values
     if (zeroHandling === "exclude") {
       processedData = processedData.filter(value => value > 0);
     }
     
     if (processedData.length === 0) return 0;
     
-    // Apply processing mode
     switch (mode) {
       case "average":
         return average(processedData);
       case "top50":
-        // Sort data in descending order
         processedData.sort((a, b) => b - a);
-        // Calculate the number of elements to include (top 50%)
         const count = Math.ceil(processedData.length / 2);
-        // Take the top 50% of values
         const topHalf = processedData.slice(0, count);
-        // Calculate the average of these values
         return average(topHalf);
       case "best":
         return Math.max(...processedData);

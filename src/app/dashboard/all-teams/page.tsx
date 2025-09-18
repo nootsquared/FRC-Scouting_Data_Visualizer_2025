@@ -30,7 +30,6 @@ export default function AllTeamsPage() {
   const [dataSource, setDataSource] = useState<DataSource>("live");
   const [rankings, setRankings] = useState<any[]>([]);
 
-  // Memoize the update function to prevent unnecessary re-renders
   const updateRankings = useCallback(() => {
     const updatedRankings = getAllTeamsRankings(processingMode, zeroHandling, dataSource);
     setRankings(updatedRankings);
@@ -40,7 +39,6 @@ export default function AllTeamsPage() {
       dataSource: dataSource
     })));
     
-    // Check if any teams have non-zero defense ratings
     const teamsWithDefense = updatedRankings.filter(r => r.defenseRating > 0);
     console.log(`Found ${teamsWithDefense.length} teams with non-zero defense ratings out of ${updatedRankings.length} total teams`);
     if (teamsWithDefense.length > 0) {
@@ -51,7 +49,6 @@ export default function AllTeamsPage() {
     }
   }, [processingMode, zeroHandling, dataSource]);
 
-  // Update rankings when data source, processing mode, or zero handling changes
   useEffect(() => {
     updateRankings();
   }, [updateRankings]);
@@ -72,7 +69,6 @@ export default function AllTeamsPage() {
     setDataSource(newSource);
   };
 
-  // Sort rankings based on the selected metric and prepare data for stacked bar chart
   const chartData = [...rankings]
     .sort((a, b) => {
       if (rankingMetric === "epa") {
@@ -87,7 +83,6 @@ export default function AllTeamsPage() {
       total: team.totalEPA,
     }));
 
-  // Custom tooltip for the stacked bar chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -148,7 +143,6 @@ export default function AllTeamsPage() {
           currentRankingMetric={rankingMetric}
         />
 
-        {/* EPA Rankings Chart */}
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
             <CardTitle className="text-white">EPA Rankings</CardTitle>
@@ -178,7 +172,6 @@ export default function AllTeamsPage() {
         </Card>
 
         <div className="space-y-6">
-          {/* Total Points Ranking */}
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
               <CardTitle className="text-2xl text-white">Total Points Ranking</CardTitle>
@@ -209,7 +202,6 @@ export default function AllTeamsPage() {
             </CardContent>
           </Card>
 
-          {/* Autonomous Performance */}
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
               <CardTitle className="text-2xl text-white">Autonomous Performance</CardTitle>
@@ -271,7 +263,6 @@ export default function AllTeamsPage() {
             </CardContent>
           </Card>
 
-          {/* Teleop Performance */}
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
               <CardTitle className="text-2xl text-white">Teleop Performance</CardTitle>
@@ -333,7 +324,6 @@ export default function AllTeamsPage() {
             </CardContent>
           </Card>
 
-          {/* Defensive Rating */}
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
               <CardTitle className="text-2xl text-white">Defensive Rating</CardTitle>
