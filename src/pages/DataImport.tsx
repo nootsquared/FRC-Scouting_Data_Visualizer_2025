@@ -19,7 +19,6 @@ const DataImport: React.FC = () => {
   const [scoutingDataPre, setScoutingDataPre] = useState<FileUploadState>({ file: null, status: 'idle' });
   const [existingFiles, setExistingFiles] = useState<Record<string, boolean>>({});
 
-  // Check for existing files on component mount
   useEffect(() => {
     const checkExistingFiles = () => {
       const files: Record<string, boolean> = {
@@ -28,7 +27,6 @@ const DataImport: React.FC = () => {
         'scoutingDataPre.json': false
       };
       
-      // Check localStorage
       Object.keys(files).forEach(fileName => {
         if (localStorage.getItem(fileName)) {
           files[fileName] = true;
@@ -43,10 +41,8 @@ const DataImport: React.FC = () => {
 
   const saveJsonToFile = async (data: any, fileName: string) => {
     try {
-      // Save to localStorage for persistence
       localStorage.setItem(fileName, JSON.stringify(data));
       
-      // Create a downloadable file
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       saveAs(blob, fileName);
       
@@ -59,47 +55,38 @@ const DataImport: React.FC = () => {
 
   const convertExcelToJson = async (file: File, type: 'pit' | 'scouting' | 'pre') => {
     try {
-      // Read the file as an ArrayBuffer
       const data = await file.arrayBuffer();
       
-      // Parse the Excel file
       const workbook = XLSX.read(data, { type: 'array' });
       
-      // Get the first worksheet
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
       
-      // Convert to JSON
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      // Convert to the appropriate format based on type
       let formattedData;
       switch (type) {
         case 'pit':
           formattedData = jsonData.map((row: any) => ({
             teamNumber: row.teamNumber || row.TeamNumber || row['Team Number'] || '',
-            // Add other pit scouting fields as needed
           }));
           break;
         case 'scouting':
           formattedData = jsonData.map((row: any) => ({
             matchNumber: row.matchNumber || row.MatchNumber || row['Match Number'] || '',
             teamNumber: row.teamNumber || row.TeamNumber || row['Team Number'] || '',
-            // Add other scouting fields as needed
           }));
           break;
         case 'pre':
           formattedData = jsonData.map((row: any) => ({
             matchNumber: row.matchNumber || row.MatchNumber || row['Match Number'] || '',
             teamNumber: row.teamNumber || row.TeamNumber || row['Team Number'] || '',
-            // Add other pre-scouting fields as needed
           }));
           break;
         default:
           throw new Error('Invalid file type');
       }
 
-      // Save the JSON file
       const fileName = type === 'pit' ? 'pitScoutingData.json' : 
                       type === 'scouting' ? 'scoutingData.json' : 
                       'scoutingDataPre.json';
@@ -133,7 +120,6 @@ const DataImport: React.FC = () => {
       if (success) {
         setState({ file, status: 'success' });
         
-        // Update existingFiles state
         const fileName = type === 'pit' ? 'pitScoutingData.json' : 
                         type === 'scouting' ? 'scoutingData.json' : 
                         'scoutingDataPre.json';

@@ -1,18 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+  useEffect,
+} from 'react';
 import { ProcessingMode, ZeroHandling, RankingMetric } from '@/components/ui/all-teams-data-controls';
+import type { AppConfig } from '@/types/app-config';
 
 interface AppContextType {
-  // All Teams View State
   processingMode: ProcessingMode;
   setProcessingMode: (mode: ProcessingMode) => void;
   zeroHandling: ZeroHandling;
   setZeroHandling: (handling: ZeroHandling) => void;
   rankingMetric: RankingMetric;
   setRankingMetric: (metric: RankingMetric) => void;
-  
-  // Team Analysis State
   teamNumber: string;
   setTeamNumber: (number: string) => void;
   teamData: any;
@@ -21,23 +26,26 @@ interface AppContextType {
   setTeamAverages: (averages: any) => void;
   pitData: any;
   setPitData: (data: any) => void;
+  config: AppConfig | null;
+  setConfig: (config: AppConfig | null) => void;
+  refreshConfig: () => Promise<void>;
+  configLoading: boolean;
+  configError: string | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  // All Teams View State
   const [processingMode, setProcessingMode] = useState<ProcessingMode>("average");
   const [zeroHandling, setZeroHandling] = useState<ZeroHandling>("include");
   const [rankingMetric, setRankingMetric] = useState<RankingMetric>("epa");
-  
-  // Team Analysis State
   const [teamNumber, setTeamNumber] = useState("");
   const [teamData, setTeamData] = useState<any>(null);
   const [teamAverages, setTeamAverages] = useState<any>(null);
   const [pitData, setPitData] = useState<any>(null);
-
-  // Wrap state setters with useCallback to prevent unnecessary re-renders
+  const [configState, setConfigState] = useState<AppConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState<boolean>(true);
+  const [configError, setConfigError] = useState<string | null>(null);
   const handleProcessingModeChange = useCallback((mode: ProcessingMode) => {
     setProcessingMode(mode);
   }, []);
@@ -48,6 +56,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const handleRankingMetricChange = useCallback((metric: RankingMetric) => {
     setRankingMetric(metric);
+  }, []);
+
+  const refreshConfig = useCallback(async () => {
+    setConfigLoading(true);
+    setConfigError(null);
+
+    try {
+      const response = await fetch('/api/config');
+      if (!response.ok) {
+        throw new Error(`Failed to load config: ${response.status}`);
+      }
+      const config = (await response.json()) as AppConfig;
+      setConfigState(config);
+    } catch (error) {
+      console.error('Failed to load configuration', error);
+      setConfigState(null);
+      setConfigError('Unable to load configuration');
+    } finally {
+      setConfigLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshConfig();
+  }, [refreshConfig]);
+
+  const handleSetConfig = useCallback((config: AppConfig | null) => {
+    setConfigState(config);
   }, []);
 
   return (
@@ -67,6 +103,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setTeamAverages,
         pitData,
         setPitData,
+        config: configState,
+        setConfig: handleSetConfig,
+        refreshConfig,
+        configLoading,
+        configError,
       }}
     >
       {children}

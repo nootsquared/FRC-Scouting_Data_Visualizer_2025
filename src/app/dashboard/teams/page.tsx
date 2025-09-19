@@ -6,6 +6,12 @@ import { Table, TableHeader, TableBody, TableCell, TableRow, TableHead } from '@
 import { ResponsiveContainer } from 'recharts';
 import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 import { useData, MatchData } from '@/lib/hooks/useData';
+import { FrostedBarCursor } from '@/components/charts/FrostedBarCursor';
+import {
+  frostedTooltipContentStyle,
+  frostedTooltipItemStyle,
+  frostedTooltipLabelStyle,
+} from '@/components/charts/frostedTooltipStyles';
 
 interface TeamRanking {
   team: number;
@@ -18,7 +24,6 @@ interface TeamRanking {
 const TeamsPage = () => {
   const { data, teams } = useData();
 
-  // Calculate EPA-based rankings
   const epaRankings = useMemo(() => {
     const rankings = teams.map((team: number) => {
       const teamData = data.filter((d: MatchData) => d.teamNumber === team);
@@ -41,8 +46,6 @@ const TeamsPage = () => {
 
     return rankings.sort((a: TeamRanking, b: TeamRanking) => b.top50EPA - a.top50EPA);
   }, [teams, data]);
-
-  // Calculate EPA distribution
   const epaDistribution = useMemo(() => {
     const ranges = [
       { min: 0, max: 10, label: '0-10' },
@@ -66,7 +69,6 @@ const TeamsPage = () => {
         <p className="text-gray-400">Compare team performance across all matches</p>
       </div>
 
-      {/* EPA Rankings Table */}
       <Card className="bg-[#1A1A1A] border-gray-800 mb-8">
         <CardHeader>
           <CardTitle className="text-white">EPA Rankings</CardTitle>
@@ -102,7 +104,6 @@ const TeamsPage = () => {
         </CardContent>
       </Card>
 
-      {/* EPA Distribution Chart */}
       <Card className="bg-[#1A1A1A] border-gray-800">
         <CardHeader>
           <CardTitle className="text-white">EPA Distribution</CardTitle>
@@ -123,17 +124,14 @@ const TeamsPage = () => {
                   tick={{ fill: '#9CA3AF' }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1A1A1A',
-                    border: '1px solid #374151',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
-                  labelStyle={{ color: '#9CA3AF' }}
+                  contentStyle={frostedTooltipContentStyle}
+                  labelStyle={frostedTooltipLabelStyle}
+                  itemStyle={frostedTooltipItemStyle}
+                  cursor={<FrostedBarCursor />}
                 />
                 <Bar 
                   dataKey="count" 
-                  fill="#3B82F6"
+                  fill="#264A8A"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

@@ -16,6 +16,12 @@ import { AllTeamsDataControls, ProcessingMode, ZeroHandling, RankingMetric } fro
 import { getAllTeamsRankings } from "@/lib/all-teams-service";
 import { useAppContext } from "@/lib/context/AppContext";
 import { DataSourceSelector, type DataSource } from "@/components/ui/data-source-selector";
+import { FrostedBarCursor } from "@/components/charts/FrostedBarCursor";
+import {
+  frostedTooltipContentStyle,
+  frostedTooltipItemStyle,
+  frostedTooltipLabelStyle,
+} from "@/components/charts/frostedTooltipStyles";
 
 export default function AllTeamsPage() {
   const {
@@ -84,22 +90,50 @@ export default function AllTeamsPage() {
     }));
 
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-3">
-          <p className="text-white font-medium">Team {label}</p>
-          {payload.map((entry: any) => (
-            <p key={entry.name} style={{ color: entry.color }}>
-              {entry.name}: {entry.value.toFixed(2)}
-            </p>
-          ))}
-          <p className="text-white mt-1 border-t border-gray-800 pt-1">
-            Total EPA: {payload.reduce((sum: number, entry: any) => sum + entry.value, 0).toFixed(2)}
-          </p>
-        </div>
-      );
+    if (!active || !payload || !payload.length) {
+      return null;
     }
-    return null;
+
+    const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
+
+    return (
+      <div style={frostedTooltipContentStyle}>
+        <div style={frostedTooltipLabelStyle}>Team {label}</div>
+        <div style={{ display: 'grid', gap: '6px' }}>
+          {payload.map((entry: any) => (
+            <div key={entry.name} style={{ ...frostedTooltipItemStyle, color: entry.color }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: entry.color,
+                  opacity: 0.9,
+                }}
+              />
+              <span style={{ color: '#F8FAFC' }}>{entry.name}</span>
+              <span style={{ marginLeft: 'auto', color: '#E2E8F0' }}>{entry.value.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <div
+          style={{
+            marginTop: '12px',
+            paddingTop: '10px',
+            borderTop: '1px solid rgba(148, 163, 184, 0.25)',
+            fontWeight: 600,
+            fontSize: '13px',
+            color: '#F8FAFC',
+            display: 'flex',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span>Total EPA</span>
+          <span>{total.toFixed(2)}</span>
+        </div>
+      </div>
+    );
   };
 
   const sortedAutonRankings = [...rankings].sort((a, b) => {
@@ -161,9 +195,9 @@ export default function AllTeamsPage() {
                     stroke="#9CA3AF"
                     label={{ value: 'EPA Points', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
                   />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar dataKey="Autonomous" stackId="a" fill="#60A5FA" />
+                  <Tooltip content={<CustomTooltip />} cursor={<FrostedBarCursor />} />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
+                  <Bar dataKey="Autonomous" stackId="a" fill="#2F5AA8" />
                   <Bar dataKey="Teleop" stackId="a" fill="#34D399" />
                 </BarChart>
               </ResponsiveContainer>
@@ -186,16 +220,17 @@ export default function AllTeamsPage() {
                   <XAxis dataKey="teamNumber" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6', fontWeight: 600 }}
-                    itemStyle={{ color: '#E5E7EB' }}
+                    contentStyle={frostedTooltipContentStyle}
+                    labelStyle={frostedTooltipLabelStyle}
+                    itemStyle={frostedTooltipItemStyle}
                     formatter={(value: number, name: string) => [value.toFixed(2), name]}
+                    cursor={<FrostedBarCursor />}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
                   <Bar
                     dataKey={rankingMetric === "epa" ? "totalEPA" : "totalCoral"}
                     name={rankingMetric === "epa" ? "Total EPA" : "Total Game Pieces"}
-                    fill="#3B82F6"
+                    fill="#264A8A"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -216,35 +251,36 @@ export default function AllTeamsPage() {
                   <XAxis dataKey="teamNumber" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6', fontWeight: 600 }}
-                    itemStyle={{ color: '#E5E7EB' }}
+                    contentStyle={frostedTooltipContentStyle}
+                    labelStyle={frostedTooltipLabelStyle}
+                    itemStyle={frostedTooltipItemStyle}
                     formatter={(value: number, name: string) => [value.toFixed(2), name]}
+                    cursor={<FrostedBarCursor />}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
                   <Bar
                     dataKey="autonL4"
                     name="L4"
                     stackId="a"
-                    fill="#8B5CF6"
+                    fill="#16294F"
                   />
                   <Bar
                     dataKey="autonL3"
                     name="L3"
                     stackId="a"
-                    fill="#6366F1"
+                    fill="#1F3B73"
                   />
                   <Bar
                     dataKey="autonL2"
                     name="L2"
                     stackId="a"
-                    fill="#3B82F6"
+                    fill="#264A8A"
                   />
                   <Bar
                     dataKey="autonL1"
                     name="L1"
                     stackId="a"
-                    fill="#60A5FA"
+                    fill="#2F5AA8"
                   />
                   <Bar
                     dataKey="autonProcessor"
@@ -277,35 +313,36 @@ export default function AllTeamsPage() {
                   <XAxis dataKey="teamNumber" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6', fontWeight: 600 }}
-                    itemStyle={{ color: '#E5E7EB' }}
+                    contentStyle={frostedTooltipContentStyle}
+                    labelStyle={frostedTooltipLabelStyle}
+                    itemStyle={frostedTooltipItemStyle}
                     formatter={(value: number, name: string) => [value.toFixed(2), name]}
+                    cursor={<FrostedBarCursor />}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
                   <Bar
                     dataKey="teleopL4"
                     name="L4"
                     stackId="a"
-                    fill="#8B5CF6"
+                    fill="#16294F"
                   />
                   <Bar
                     dataKey="teleopL3"
                     name="L3"
                     stackId="a"
-                    fill="#6366F1"
+                    fill="#1F3B73"
                   />
                   <Bar
                     dataKey="teleopL2"
                     name="L2"
                     stackId="a"
-                    fill="#3B82F6"
+                    fill="#264A8A"
                   />
                   <Bar
                     dataKey="teleopL1"
                     name="L1"
                     stackId="a"
-                    fill="#60A5FA"
+                    fill="#2F5AA8"
                   />
                   <Bar
                     dataKey="teleopProcessor"
@@ -352,9 +389,9 @@ export default function AllTeamsPage() {
                     }}
                   />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6', fontWeight: 600 }}
-                    itemStyle={{ color: '#E5E7EB' }}
+                    contentStyle={frostedTooltipContentStyle}
+                    labelStyle={frostedTooltipLabelStyle}
+                    itemStyle={frostedTooltipItemStyle}
                     formatter={(value: number) => {
                       const rating = value.toFixed(2);
                       let label = 'Poor';
@@ -363,8 +400,9 @@ export default function AllTeamsPage() {
                       else if (value >= 0.5) label = 'Fair';
                       return [`${rating} - ${label}`, 'Defense Rating'];
                     }}
+                    cursor={<FrostedBarCursor />}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
                   <Bar
                     dataKey="defenseRating"
                     name="Defense Rating"

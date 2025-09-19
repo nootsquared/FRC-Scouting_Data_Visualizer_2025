@@ -7,7 +7,6 @@ const nextConfig = {
       },
     },
   },
-  // Enable JSON imports
   webpack: (config) => {
     config.module.rules.push({
       test: /\.json$/,

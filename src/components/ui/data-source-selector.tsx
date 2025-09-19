@@ -66,17 +66,17 @@ export function DataSourceSelector({
   return (
     <div
       ref={trackRef}
-      className="relative inline-flex items-center gap-2 rounded-lg border border-slate-900/70 bg-[#0B1424] p-1 shadow-[0_16px_32px_rgba(7,12,25,0.45)]"
+      className="relative inline-flex items-center rounded-lg border border-gray-700/50 bg-gradient-to-r from-[#111111] via-[#1A1A1A] to-[#111111] p-0.5 shadow-xl backdrop-blur-sm"
     >
       <span
         className={cn(
-          "pointer-events-none absolute left-0 top-1 bottom-1 rounded-md bg-sky-500/20 transition-opacity duration-200",
+          "pointer-events-none absolute top-0.5 bottom-0.5 rounded-md bg-brandBlue-accent/30 border border-brandBlue-accent/50 shadow-md transition-all duration-300 ease-out",
           highlight.ready ? "opacity-100" : "opacity-0"
         )}
         style={{
           width: highlight.width,
-          transform: `translateX(${highlight.offset}px)`,
-          transition: "transform 220ms ease, width 200ms ease",
+          left: highlight.offset,
+          transition: "left 300ms cubic-bezier(0.4, 0, 0.2, 1), width 250ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       />
 
@@ -92,8 +92,10 @@ export function DataSourceSelector({
             onClick={() => handleSourceChange(source)}
             aria-pressed={isActive}
             className={cn(
-              "relative z-10 flex min-w-[110px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60",
-              isActive ? "text-white" : "text-slate-300 hover:text-slate-100"
+              "relative z-10 flex min-w-[100px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brandBlue-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+              isActive 
+                ? "text-white" 
+                : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
             )}
           >
             {label}

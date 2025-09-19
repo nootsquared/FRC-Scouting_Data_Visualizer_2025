@@ -24,12 +24,9 @@ export function AllTeamsDataControls({
   currentZeroHandling,
   currentRankingMetric,
 }: AllTeamsDataControlsProps) {
-  // Use local state to track changes
   const [localMode, setLocalMode] = useState<ProcessingMode>(currentMode);
   const [localZeroHandling, setLocalZeroHandling] = useState<ZeroHandling>(currentZeroHandling);
   const [localRankingMetric, setLocalRankingMetric] = useState<RankingMetric>(currentRankingMetric);
-
-  // Update local state when props change
   useEffect(() => {
     setLocalMode(currentMode);
   }, [currentMode]);
@@ -41,21 +38,15 @@ export function AllTeamsDataControls({
   useEffect(() => {
     setLocalRankingMetric(currentRankingMetric);
   }, [currentRankingMetric]);
-
-  // Handle mode changes with immediate updates
   const handleModeChange = (mode: ProcessingMode) => {
     setLocalMode(mode);
     onModeChange(mode);
   };
-
-  // Handle zero handling changes with immediate updates
   const handleZeroHandlingChange = (checked: boolean) => {
     const newHandling: ZeroHandling = checked ? "exclude" : "include";
     setLocalZeroHandling(newHandling);
     onZeroHandlingChange(newHandling);
   };
-
-  // Handle ranking metric changes with immediate updates
   const handleRankingMetricChange = (metric: RankingMetric) => {
     setLocalRankingMetric(metric);
     onRankingMetricChange(metric);

@@ -38,7 +38,6 @@ import { SearchIcon } from "lucide-react";
 import { DataSourceSelector, type DataSource } from "@/components/ui/data-source-selector";
 import { useRouter } from "next/navigation";
 
-// Icons
 import {
   LayoutDashboard,
   LineChart,
@@ -52,28 +51,12 @@ import {
   Plus,
 } from "lucide-react";
 import { FrostedBarCursor } from "@/components/charts/FrostedBarCursor";
+import {
+  frostedTooltipContentStyle,
+  frostedTooltipItemStyle,
+  frostedTooltipLabelStyle,
+} from "@/components/charts/frostedTooltipStyles";
 
-// Add this custom tooltip style object
-const tooltipStyle = {
-  backgroundColor: '#1F2937',
-  border: 'none',
-  borderRadius: '8px',
-  padding: '12px',
-  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-};
-
-const tooltipLabelStyle = {
-  color: '#F3F4F6',
-  fontWeight: 600,
-  marginBottom: '4px',
-};
-
-const tooltipItemStyle = {
-  color: '#E5E7EB',
-  padding: '2px 0',
-};
-
-// Add this type for RP data
 interface RPStats {
   coopRP: number;
   autoRP: number;
@@ -103,7 +86,12 @@ export default function TeamPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Load team number from URL or localStorage
+  const tableHeadClass =
+    "px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-gray-400 whitespace-nowrap";
+  const tableCellClass =
+    "px-3 py-3 text-sm text-gray-200/90 whitespace-nowrap";
+  const commentCellClass = `${tableCellClass} min-w-[220px] text-gray-300`;
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const teamFromUrl = searchParams.get('team');
@@ -117,7 +105,6 @@ export default function TeamPage() {
     }
   }, []);
 
-  // Effect to update data when team number, data source, processing mode, or zero handling changes
   useEffect(() => {
     if (teamNumber && teamNumber.trim() !== '') {
       updateTeamData();
@@ -196,7 +183,6 @@ export default function TeamPage() {
     }
   };
 
-  // Add RP calculation function
   const calculateRPStats = (matches: MatchData[]): RPStats => {
     if (!matches || matches.length === 0) return {
       coopRP: 0,
@@ -208,14 +194,12 @@ export default function TeamPage() {
     };
 
     const coopRP = matches.filter(m => {
-      // At least 2 Algae scored in each Processor
       const autonProcessor = parseInt(m["Auton-Algae-Processor"]) || 0;
       const teleopProcessor = parseInt(m["Teleop-Algae-Processor"]) || 0;
       return autonProcessor >= 2 && teleopProcessor >= 2;
     }).length;
 
     const autoRP = matches.filter(m => {
-      // At least 1 Coral scored in Auto
       const autoCorals = (parseInt(m["Auton-Coral-L1"]) || 0) +
                         (parseInt(m["Auton-Coral-L2"]) || 0) +
                         (parseInt(m["Auton-Coral-L3"]) || 0) +
@@ -224,7 +208,6 @@ export default function TeamPage() {
     }).length;
 
     const coralRP = matches.filter(m => {
-      // At least 3 Coral scored per level
       const l1Total = (parseInt(m["Auton-Coral-L1"]) || 0) + (parseInt(m["Teleop-Coral-L1"]) || 0);
       const l2Total = (parseInt(m["Auton-Coral-L2"]) || 0) + (parseInt(m["Teleop-Coral-L2"]) || 0);
       const l3Total = (parseInt(m["Auton-Coral-L3"]) || 0) + (parseInt(m["Teleop-Coral-L3"]) || 0);
@@ -233,7 +216,6 @@ export default function TeamPage() {
     }).length;
 
     const bargeRP = matches.filter(m => {
-      // At least 14 Barge points
       const bargePoints = ((parseInt(m["Auton-Algae-Net"]) || 0) + 
                           (parseInt(m["Teleop-Algae-Net"]) || 0)) * 4;
       return bargePoints >= 14;
@@ -260,7 +242,6 @@ export default function TeamPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white">Team Analysis</h1>
             <p className="text-gray-400 mt-2">Analyze performance metrics for a specific team</p>
           </div>
-          {/* Absolute positioning for centered data source selector */}
           <div className="absolute left-1/2 -translate-x-1/2">
             <DataSourceSelector
               currentSource={dataSource}
@@ -279,7 +260,7 @@ export default function TeamPage() {
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-brandBlue-accent hover:bg-brandBlue"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
@@ -305,7 +286,6 @@ export default function TeamPage() {
           currentZeroHandling={zeroHandling}
         />
 
-        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader className="space-y-1">
@@ -351,7 +331,6 @@ export default function TeamPage() {
           </Card>
         </div>
 
-        {/* Detailed Statistics */}
         <Card className="bg-[#1A1A1A] border-gray-800 mt-12">
           <CardHeader className="pb-4">
             <CardTitle className="text-2xl text-white">Detailed Statistics</CardTitle>
@@ -359,7 +338,6 @@ export default function TeamPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-              {/* Autonomous Stats */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Autonomous</h3>
                 <div className="space-y-2">
@@ -394,7 +372,6 @@ export default function TeamPage() {
                 </div>
               </div>
 
-              {/* Teleop Stats */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Teleop</h3>
                 <div className="space-y-2">
@@ -429,7 +406,6 @@ export default function TeamPage() {
                 </div>
               </div>
 
-              {/* Performance Stats */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Performance</h3>
                 <div className="space-y-2">
@@ -467,7 +443,6 @@ export default function TeamPage() {
           </CardContent>
         </Card>
 
-        {/* Charts Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
@@ -480,17 +455,17 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={tooltipStyle}
-                    labelStyle={tooltipLabelStyle}
-                    itemStyle={tooltipItemStyle}
-                    cursor={<FrostedBarCursor />}
-                  />
-                  <Legend />
-                  <Bar dataKey="L4" stackId="a" fill="#8B5CF6" />
-                  <Bar dataKey="L3" stackId="a" fill="#6366F1" />
-                  <Bar dataKey="L2" stackId="a" fill="#3B82F6" />
-                  <Bar dataKey="L1" stackId="a" fill="#60A5FA" />
+                    <Tooltip 
+                      contentStyle={frostedTooltipContentStyle}
+                      labelStyle={frostedTooltipLabelStyle}
+                      itemStyle={frostedTooltipItemStyle}
+                      cursor={<FrostedBarCursor />}
+                    />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
+                  <Bar dataKey="L4" stackId="a" fill="#16294F" />
+                  <Bar dataKey="L3" stackId="a" fill="#1F3B73" />
+                  <Bar dataKey="L2" stackId="a" fill="#264A8A" />
+                  <Bar dataKey="L1" stackId="a" fill="#2F5AA8" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -507,17 +482,17 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={tooltipStyle}
-                    labelStyle={tooltipLabelStyle}
-                    itemStyle={tooltipItemStyle}
-                    cursor={<FrostedBarCursor />}
-                  />
-                  <Legend />
-                  <Bar dataKey="L4" stackId="a" fill="#8B5CF6" />
-                  <Bar dataKey="L3" stackId="a" fill="#6366F1" />
-                  <Bar dataKey="L2" stackId="a" fill="#3B82F6" />
-                  <Bar dataKey="L1" stackId="a" fill="#60A5FA" />
+                    <Tooltip 
+                      contentStyle={frostedTooltipContentStyle}
+                      labelStyle={frostedTooltipLabelStyle}
+                      itemStyle={frostedTooltipItemStyle}
+                      cursor={<FrostedBarCursor />}
+                    />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
+                  <Bar dataKey="L4" stackId="a" fill="#16294F" />
+                  <Bar dataKey="L3" stackId="a" fill="#1F3B73" />
+                  <Bar dataKey="L2" stackId="a" fill="#264A8A" />
+                  <Bar dataKey="L1" stackId="a" fill="#2F5AA8" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -534,13 +509,13 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={tooltipStyle}
-                    labelStyle={tooltipLabelStyle}
-                    itemStyle={tooltipItemStyle}
-                    cursor={<FrostedBarCursor />}
-                  />
-                  <Legend />
+                    <Tooltip 
+                      contentStyle={frostedTooltipContentStyle}
+                      labelStyle={frostedTooltipLabelStyle}
+                      itemStyle={frostedTooltipItemStyle}
+                      cursor={<FrostedBarCursor />}
+                    />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
                   <Bar dataKey="Processor" stackId="a" fill="#10B981" />
                   <Bar dataKey="Net" stackId="a" fill="#34D399" />
                 </BarChart>
@@ -559,13 +534,13 @@ export default function TeamPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="match" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={tooltipStyle}
-                    labelStyle={tooltipLabelStyle}
-                    itemStyle={tooltipItemStyle}
-                    cursor={<FrostedBarCursor />}
-                  />
-                  <Legend />
+                    <Tooltip 
+                      contentStyle={frostedTooltipContentStyle}
+                      labelStyle={frostedTooltipLabelStyle}
+                      itemStyle={frostedTooltipItemStyle}
+                      cursor={<FrostedBarCursor />}
+                    />
+                  <Legend wrapperStyle={{ color: '#F3F4F6' }} />
                   <Bar dataKey="Processor" stackId="a" fill="#10B981" />
                   <Bar dataKey="Net" stackId="a" fill="#34D399" />
                 </BarChart>
@@ -574,7 +549,6 @@ export default function TeamPage() {
           </Card>
         </div>
 
-        {/* RP Statistics */}
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
             <CardTitle className="text-2xl text-white">Ranking Point Analysis</CardTitle>
@@ -585,7 +559,7 @@ export default function TeamPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white">RP Achievement</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                  <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Coopertition RP</span>
                       <span className="text-white font-medium">{calculateRPStats(teamData).coopRP}</span>
@@ -607,7 +581,7 @@ export default function TeamPage() {
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white">RP Statistics</h3>
-                  <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                  <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Total RPs</span>
                       <span className="text-white font-medium">{calculateRPStats(teamData).totalRP}</span>
@@ -629,101 +603,122 @@ export default function TeamPage() {
           </CardContent>
         </Card>
 
-        {/* Match History Table - Modified to remove extra scrollbar */}
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
             <CardTitle className="text-white">Match History</CardTitle>
             <CardDescription className="text-gray-400">Detailed match data</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="table-scroll-container">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-800">
-                    <TableHead className="text-gray-300">Scouter</TableHead>
-                    <TableHead className="text-gray-300">Event</TableHead>
-                    <TableHead className="text-gray-300">Match Level</TableHead>
-                    <TableHead className="text-gray-300">Match Number</TableHead>
-                    <TableHead className="text-gray-300">Robot</TableHead>
-                    <TableHead className="text-gray-300">Team Number</TableHead>
-                    <TableHead className="text-gray-300">Auton Position</TableHead>
-                    <TableHead className="text-gray-300">Auton Leave Start</TableHead>
-                    <TableHead className="text-gray-300">Auton L4</TableHead>
-                    <TableHead className="text-gray-300">Auton L3</TableHead>
-                    <TableHead className="text-gray-300">Auton L2</TableHead>
-                    <TableHead className="text-gray-300">Auton L1</TableHead>
-                    <TableHead className="text-gray-300">Algae Removed from Reef</TableHead>
-                    <TableHead className="text-gray-300">Auton Algae Processor</TableHead>
-                    <TableHead className="text-gray-300">Auton Algae Net</TableHead>
-                    <TableHead className="text-gray-300">Teleop L4</TableHead>
-                    <TableHead className="text-gray-300">Teleop L3</TableHead>
-                    <TableHead className="text-gray-300">Teleop L2</TableHead>
-                    <TableHead className="text-gray-300">Teleop L1</TableHead>
-                    <TableHead className="text-gray-300">Teleop Removed from Reef</TableHead>
-                    <TableHead className="text-gray-300">Teleop Algae Processor</TableHead>
-                    <TableHead className="text-gray-300">Teleop Algae Net</TableHead>
-                    <TableHead className="text-gray-300">Defense Played</TableHead>
-                    <TableHead className="text-gray-300">Ground Pickup</TableHead>
-                    <TableHead className="text-gray-300">Climb Status</TableHead>
-                    <TableHead className="text-gray-300">No Climb Reason</TableHead>
-                    <TableHead className="text-gray-300">Driver Skill</TableHead>
-                    <TableHead className="text-gray-300">Defense Rating</TableHead>
-                    <TableHead className="text-gray-300">Died</TableHead>
-                    <TableHead className="text-gray-300">Tipped</TableHead>
-                    <TableHead className="text-gray-300 min-w-[200px]">Comments</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teamData ? (
-                    teamData.map((match: MatchData, index: number) => (
-                      <TableRow key={index} className="border-gray-800">
-                        <TableCell className="text-gray-300">{match.Scouter}</TableCell>
-                        <TableCell className="text-gray-300">{match.Event}</TableCell>
-                        <TableCell className="text-gray-300">{match["Match-Level"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Match-Number"]}</TableCell>
-                        <TableCell className="text-gray-300">{match.Robot.startsWith('r') ? '🔴 Red' : '🔵 Blue'} {match.Robot}</TableCell>
-                        <TableCell className="text-gray-300">{match["Team-Number"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Position"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Leave-Start"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Coral-L4"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Coral-L3"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Coral-L2"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Coral-L1"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Algae-Removed- from-Reef"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Algae-Processor"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Auton-Algae-Net"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Teleop-Coral-L4"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Teleop-Coral-L3"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Teleop-Coral-L2"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Teleop-Coral-L1"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["TeleOp-Removed- from-Reef"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Teleop-Algae-Processor"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Teleop-Algae-Net"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Defense-Played-on-Robot"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Ground-Pick-Up"]}</TableCell>
-                        <TableCell className="text-gray-300">{getClimbStatus(match["Climb-Status"])}</TableCell>
-                        <TableCell className="text-gray-300">{match["No-Climb-Reason"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Driver-Skill"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Defense Rating"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Died-YN"]}</TableCell>
-                        <TableCell className="text-gray-300">{match["Tipped-YN"]}</TableCell>
-                        <TableCell className="text-gray-300 min-w-[200px]">{match.Comments}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow className="border-gray-800">
-                      <TableCell colSpan={31} className="text-center py-4 text-gray-400">
-                        Enter a team number to view match data
-                      </TableCell>
+            <div className="overflow-hidden rounded-md border border-white/10 bg-gradient-to-br from-[#161616] via-[#121212] to-[#0f0f0f] shadow-[0_24px_48px_-32px_rgba(0,0,0,0.9)]">
+              <div className="overflow-x-auto">
+                <Table className="min-w-[1200px]">
+                  <TableHeader className="bg-white/[0.03] supports-[backdrop-filter]:backdrop-blur-sm">
+                    <TableRow className="border-white/10 hover:bg-transparent">
+                      <TableHead className={tableHeadClass}>Scouter</TableHead>
+                      <TableHead className={tableHeadClass}>Event</TableHead>
+                      <TableHead className={tableHeadClass}>Match Level</TableHead>
+                      <TableHead className={tableHeadClass}>Match Number</TableHead>
+                      <TableHead className={tableHeadClass}>Robot</TableHead>
+                      <TableHead className={tableHeadClass}>Team Number</TableHead>
+                      <TableHead className={tableHeadClass}>Auton Position</TableHead>
+                      <TableHead className={tableHeadClass}>Auton Leave Start</TableHead>
+                      <TableHead className={tableHeadClass}>Auton L4</TableHead>
+                      <TableHead className={tableHeadClass}>Auton L3</TableHead>
+                      <TableHead className={tableHeadClass}>Auton L2</TableHead>
+                      <TableHead className={tableHeadClass}>Auton L1</TableHead>
+                      <TableHead className={tableHeadClass}>Algae Removed from Reef</TableHead>
+                      <TableHead className={tableHeadClass}>Auton Algae Processor</TableHead>
+                      <TableHead className={tableHeadClass}>Auton Algae Net</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop L4</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop L3</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop L2</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop L1</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop Removed from Reef</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop Algae Processor</TableHead>
+                      <TableHead className={tableHeadClass}>Teleop Algae Net</TableHead>
+                      <TableHead className={tableHeadClass}>Defense Played</TableHead>
+                      <TableHead className={tableHeadClass}>Ground Pickup</TableHead>
+                      <TableHead className={tableHeadClass}>Climb Status</TableHead>
+                      <TableHead className={tableHeadClass}>No Climb Reason</TableHead>
+                      <TableHead className={tableHeadClass}>Driver Skill</TableHead>
+                      <TableHead className={tableHeadClass}>Defense Rating</TableHead>
+                      <TableHead className={tableHeadClass}>Died</TableHead>
+                      <TableHead className={tableHeadClass}>Tipped</TableHead>
+                      <TableHead className={tableHeadClass}>Comments</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {teamData ? (
+                      teamData.map((match: MatchData, index: number) => {
+                        const isRedAlliance = match.Robot.startsWith('r');
+                        const rowBackground = index % 2 === 0 ? "bg-[#111111]" : "bg-[#151515]";
+                        const allianceClassName = isRedAlliance
+                          ? "ring-red-500/30 text-red-300"
+                          : "ring-sky-500/30 text-sky-300";
+
+                        return (
+                          <TableRow
+                            key={index}
+                            className={`${rowBackground} border-white/5 transition-colors duration-200 hover:bg-white/[0.07]`}
+                          >
+                            <TableCell className={tableCellClass}>{match.Scouter}</TableCell>
+                            <TableCell className={tableCellClass}>{match.Event}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Match-Level"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Match-Number"]}</TableCell>
+                            <TableCell className={tableCellClass}>
+                              <span
+                                className={`inline-flex items-center gap-2 rounded-sm bg-white/[0.04] px-2 py-1 text-xs font-semibold uppercase tracking-wide ring-1 ring-inset ${allianceClassName}`}
+                              >
+                                <span
+                                  className={`h-2.5 w-2.5 rounded-full ${isRedAlliance ? "bg-red-400" : "bg-sky-400"}`}
+                                />
+                                {isRedAlliance ? "Red" : "Blue"}
+                                <span className="text-gray-400">{match.Robot}</span>
+                              </span>
+                            </TableCell>
+                            <TableCell className={tableCellClass}>{match["Team-Number"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Position"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Leave-Start"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Coral-L4"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Coral-L3"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Coral-L2"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Coral-L1"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Algae-Removed- from-Reef"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Algae-Processor"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Auton-Algae-Net"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Teleop-Coral-L4"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Teleop-Coral-L3"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Teleop-Coral-L2"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Teleop-Coral-L1"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["TeleOp-Removed- from-Reef"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Teleop-Algae-Processor"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Teleop-Algae-Net"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Defense-Played-on-Robot"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Ground-Pick-Up"]}</TableCell>
+                            <TableCell className={tableCellClass}>{getClimbStatus(match["Climb-Status"])}</TableCell>
+                            <TableCell className={tableCellClass}>{match["No-Climb-Reason"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Driver-Skill"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Defense Rating"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Died-YN"]}</TableCell>
+                            <TableCell className={tableCellClass}>{match["Tipped-YN"]}</TableCell>
+                            <TableCell className={commentCellClass}>{match.Comments}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow className="border-white/5 hover:bg-transparent">
+                        <TableCell colSpan={31} className="py-6 text-center text-gray-500">
+                          Enter a team number to view match data
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Pit Scouting Data */}
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
             <CardTitle className="text-2xl text-white">Pit Scouting Data</CardTitle>
@@ -732,14 +727,13 @@ export default function TeamPage() {
           <CardContent>
             {pitData ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* Physical Specifications */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                       <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
                       Physical Specifications
                     </h3>
-                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">Drivetrain</span>
                         <span className="text-white font-medium">{pitData.physical.drivetrainType}</span>
@@ -760,14 +754,13 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                {/* Mechanisms */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                      <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                      <span className="w-3 h-3 rounded-full bg-brandBlue-accent mr-2"></span>
                       Mechanisms
                     </h3>
-                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">Intake Type</span>
                         <span className="text-white font-medium">{pitData.mechanisms.intakeType}</span>
@@ -792,14 +785,13 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                {/* Electronics & Software */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                       <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
                       Electronics & Software
                     </h3>
-                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">Controller</span>
                         <span className="text-white font-medium">{pitData.electronics.mainController}</span>
@@ -820,14 +812,13 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                {/* Strategy */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                       <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
                       Strategy
                     </h3>
-                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">Primary Role</span>
                         <span className="text-white font-medium">{pitData.strategy.primaryRole}</span>
@@ -844,14 +835,13 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                {/* Special Features */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                       <span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
                       Special Features
                     </h3>
-                    <div className="bg-gray-900 rounded-lg p-4">
+                    <div className="bg-[#181818] rounded-lg p-4">
                       <div className="flex flex-wrap gap-2">
                         {pitData.strategy.specialFeatures.map((feature: string, index: number) => (
                           <span
@@ -866,14 +856,13 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                {/* Maintenance */}
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                       <span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span>
                       Maintenance
                     </h3>
-                    <div className="bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="bg-[#181818] rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400">Battery Count</span>
                         <span className="text-white font-medium">{pitData.maintenance.batteryCount}</span>
@@ -899,7 +888,6 @@ export default function TeamPage() {
         </Card>
       </div>
 
-      {/* Version display */}
       <div className="fixed bottom-4 right-4">
         <span className="text-gray-400 text-sm">SC1</span>
       </div>

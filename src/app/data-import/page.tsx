@@ -22,12 +22,9 @@ export default function DataImport() {
   const [scoutingDataPre, setScoutingDataPre] = useState<FileUploadState>({ file: null, status: 'idle' });
   const [existingFiles, setExistingFiles] = useState<Record<string, boolean>>({});
   
-  // File input refs
   const pitScoutingInputRef = useRef<HTMLInputElement>(null);
   const scoutingDataInputRef = useRef<HTMLInputElement>(null);
   const scoutingDataPreInputRef = useRef<HTMLInputElement>(null);
-
-  // Check for existing files on component mount
   useEffect(() => {
     const checkExistingFiles = () => {
       const files: Record<string, boolean> = {
@@ -35,8 +32,6 @@ export default function DataImport() {
         'scouting-data.json': false,
         'scouting-data-pre.json': false
       };
-      
-      // Check localStorage
       Object.keys(files).forEach(fileName => {
         if (localStorage.getItem(fileName)) {
           files[fileName] = true;
@@ -51,10 +46,7 @@ export default function DataImport() {
 
   const saveJsonToFile = async (data: any, fileName: string) => {
     try {
-      // Save to localStorage for persistence
       localStorage.setItem(fileName, JSON.stringify(data));
-      
-      // Save to the data folder using the API
       const response = await fetch('/api/save-json', {
         method: 'POST',
         headers: {
@@ -79,23 +71,16 @@ export default function DataImport() {
     try {
       console.log('Starting CSV conversion...');
       
-      // Read the file as text
       const text = await file.text();
       console.log('File read successfully');
-      
-      // Split into lines and remove empty lines
       const lines = text.split('\n').filter(line => line.trim() !== '');
       console.log('Number of lines:', lines.length);
       
       if (lines.length < 2) {
         throw new Error('CSV file must contain at least a header row and one data row');
       }
-
-      // Parse headers
       const headers = lines[0].split(',').map(header => header.trim());
       console.log('Headers found:', headers);
-      
-      // Validate required headers
       const requiredHeaders = [
         'Scouter', 'Event', 'Match-Level', 'Match-Number', 'Team-Number',
         'Auton-Position', 'Auton-Leave-Start', 'Auton-Coral-L4', 'Auton-Coral-L3',
@@ -112,11 +97,8 @@ export default function DataImport() {
         console.error('Missing headers:', missingHeaders);
         throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`);
       }
-
-      // Process data rows
       const matches = lines.slice(1).map((line, index) => {
         try {
-          // Split the line while respecting quoted fields
           const row: string[] = [];
           let currentField = '';
           let inQuotes = false;
@@ -134,18 +116,10 @@ export default function DataImport() {
             }
           }
           row.push(currentField.trim());
-
-          // Create match object with proper data types
           const match: Record<string, any> = {};
-          
-          // Map each header to its corresponding value
           headers.forEach((header, index) => {
             let value = row[index] || '';
-            
-            // Remove any remaining quotes
             value = value.replace(/^["']|["']$/g, '').trim();
-            
-            // Convert numeric fields
             const numericFields = [
               'Auton-Leave-Start', 'Auton-Coral-L4', 'Auton-Coral-L3', 'Auton-Coral-L2',
               'Auton-Coral-L1', 'Algae-Removed- from-Reef', 'Auton-Algae-Processor',
@@ -161,8 +135,6 @@ export default function DataImport() {
               match[header] = value;
             }
           });
-
-          // Validate team number
           const teamNumber = parseInt(match['Team-Number']);
           if (isNaN(teamNumber) || teamNumber < 1 || teamNumber > 99999) {
             console.error('Invalid team number in row:', index + 2, 'Value:', match['Team-Number']);
@@ -217,8 +189,6 @@ export default function DataImport() {
       
       if (success) {
         setState({ file, status: 'success' });
-        
-        // Update existingFiles state
         const fileName = type === 'pit' ? 'pit-scouting-data.json' : 
                         type === 'scouting' ? 'scouting-data.json' : 
                         'scouting-data-pre.json';
@@ -232,15 +202,12 @@ export default function DataImport() {
       }
     } catch (error) {
       console.error('Error processing file:', error);
-      // Display the actual error message
       setState({ 
         file, 
         status: 'error', 
         error: error instanceof Error ? error.message : 'An unexpected error occurred' 
       });
     }
-    
-    // Reset the input value to allow selecting the same file again
     event.target.value = '';
   };
 

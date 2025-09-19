@@ -258,7 +258,7 @@ export default function MatchAnalysisPage() {
           "The live scouting feed is still filling in. Expect lighter sample sizes until your team uploads more results.",
       }
     : {
-        container: "bg-[#1b2538] border border-brandBlue-accent/40 text-brandBlue-soft",
+        container: "bg-yellow-900/30 border border-yellow-700 text-yellow-200",
         title: "Pre-scout Dataset",
         description:
           "Using historical pre-scout metrics. Switch back to Live to reflect in-event performance as it becomes available.",
@@ -507,31 +507,30 @@ export default function MatchAnalysisPage() {
   };
 
   return (
-    <div className="w-full p-4 bg-[#1A1A1A] text-white">
-      <div className="flex justify-between items-center mb-10">
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Match Analysis</h1>
         <DataSourceSelector
           currentSource={dataSource}
           onSourceChange={handleDataSourceChange}
         />
-      </div>
+        </div>
 
-      <div className={`${dataSourceNotice.container} rounded-md p-4 mb-10 transition-colors`}>
+        <div className={`${dataSourceNotice.container} rounded-md p-4 transition-colors`}>
         <h3 className="text-white font-medium mb-2">{dataSourceNotice.title}</h3>
         <p className="text-sm opacity-90">{dataSourceNotice.description}</p>
-      </div>
+        </div>
 
-      <div className="mb-10">
         <DataProcessingControls
           onModeChange={handleProcessingModeChange}
           onZeroHandlingChange={handleZeroHandlingChange}
           currentMode={processingMode}
           currentZeroHandling={zeroHandling}
         />
-      </div>
 
-      {predictionsReady && (
-        <Card className="bg-[#2A2A2A] border-gray-800 mb-12">
+        {predictionsReady && (
+          <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
             <CardTitle className="text-white text-2xl">Model Projection</CardTitle>
           </CardHeader>
@@ -564,11 +563,12 @@ export default function MatchAnalysisPage() {
               </p>
             </div>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <Card className="bg-[#1A1A1A] border-gray-800">
+          <CardContent className="p-6">
           <h2 className="text-2xl font-semibold mb-6 text-white">Match Details</h2>
           <div className="space-y-6">
             <div>
@@ -618,10 +618,12 @@ export default function MatchAnalysisPage() {
               </p>
             )}
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {matchData && (
-          <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardContent className="p-6">
             <h2 className="text-2xl font-semibold mb-6 text-white">Match Overview</h2>
             <div className="grid grid-cols-2 gap-6">
               <div>
@@ -663,13 +665,15 @@ export default function MatchAnalysisPage() {
                 </div>
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
-      {matchData && (
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
+        {matchData && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card className="bg-[#1A1A1A] border-gray-800">
+              <CardContent className="p-6">
             <h2 className="text-2xl font-semibold mb-8 text-red-400">Red Alliance Predictions</h2>
             <div className="space-y-8">
               {redAllianceData.teams.map((team) => (
@@ -758,9 +762,11 @@ export default function MatchAnalysisPage() {
                 </div>
               </div>
             </div>
-          </div>
+              </CardContent>
+            </Card>
 
-          <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
+            <Card className="bg-[#1A1A1A] border-gray-800">
+              <CardContent className="p-6">
             <h2 className="text-2xl font-semibold mb-8 text-brandBlue-accent">Blue Alliance Predictions</h2>
             <div className="space-y-8">
               {blueAllianceData.teams.map((team) => (
@@ -849,9 +855,11 @@ export default function MatchAnalysisPage() {
                 </div>
               </div>
             </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

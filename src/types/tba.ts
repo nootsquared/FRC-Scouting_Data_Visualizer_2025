@@ -17,7 +17,6 @@ export interface TBAMatch {
 }
 
 export interface TBATeamMatch extends TBAMatch {
-  // Additional fields specific to team matches if needed
 }
 
 export interface TBAMockData {

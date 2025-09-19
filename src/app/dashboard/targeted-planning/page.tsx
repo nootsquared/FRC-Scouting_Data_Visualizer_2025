@@ -48,7 +48,6 @@ export default function TargetedPlanningPage() {
     [config?.eventCode, config?.tbaApiKey]
   );
 
-  // Load saved values from localStorage
   useEffect(() => {
     const savedTeam = localStorage.getItem("targetedPlanningTeamNumber");
     const savedMatches = localStorage.getItem("tbaMatches");
@@ -65,7 +64,6 @@ export default function TargetedPlanningPage() {
     if (savedConsolidatedMatches) setConsolidatedMatches(JSON.parse(savedConsolidatedMatches));
   }, []);
 
-  // Persist frequently used state
   useEffect(() => {
     if (teamNumber) {
       localStorage.setItem("targetedPlanningTeamNumber", teamNumber);
@@ -305,7 +303,7 @@ export default function TargetedPlanningPage() {
           <CardContent>
             <form
               onSubmit={handleSearch}
-              className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end"
+              className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
             >
               <div className="md:pr-4">
                 <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="team-number">
@@ -370,8 +368,8 @@ export default function TargetedPlanningPage() {
                     variant={selectedMatch?.key === match.key ? "default" : "outline"}
                     className={`h-auto rounded-xl border text-left transition-all duration-200 ${
                       selectedMatch?.key === match.key
-                        ? "bg-brandBlue-accent text-white border-brandBlue-accent hover:bg-brandBlue-soft"
-                        : "bg-[#111111] text-white border-gray-800 hover:bg-gray-800/50 hover:border-gray-500 hover:backdrop-blur-sm hover:shadow-lg"
+                        ? "bg-brandBlue-accent text-white border-brandBlue-accent hover:bg-brandBlue-soft hover:text-white"
+                        : "bg-[#111111] text-white border-gray-800 hover:bg-gray-800/50 hover:border-gray-500 hover:backdrop-blur-sm hover:shadow-lg hover:text-white"
                     }`}
                     onClick={() => handleMatchSelect(match)}
                   >

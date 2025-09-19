@@ -1,6 +1,5 @@
 import { TBAMatch, TBATeamMatch, TBAMockData } from '@/types/tba';
 
-// Import mock data for testing
 import mockData from '@/data/tba-mock-data.json';
 
 const TBA_API_BASE = 'https://www.thebluealliance.com/api/v3';
@@ -9,7 +8,6 @@ const TBA_API_KEY = process.env.NEXT_PUBLIC_TBA_API_KEY || '';
 export async function getTeamMatches(teamKey: string): Promise<TBAMatch[]> {
   console.log('getTeamMatches called with teamKey:', teamKey);
   
-  // For testing, return mock data
   if (!TBA_API_KEY) {
     console.log('No API key found, using mock data');
     const mockDataTyped = mockData as TBAMockData;
@@ -43,34 +41,22 @@ export async function getTeamMatches(teamKey: string): Promise<TBAMatch[]> {
 }
 
 export function getUpcomingMatches(matches: TBAMatch[]): TBAMatch[] {
-  // For testing, return all matches sorted by time
   console.log('Checking matches for upcoming:', matches);
   return matches.sort((a, b) => {
     const timeA = a.predicted_time || a.time;
     const timeB = b.predicted_time || b.time;
     return timeA - timeB;
   });
-  
-  // Original filtering logic commented out for now
-  /*
-  const now = Date.now() / 1000; // Convert to seconds
-  return matches
-    .filter(match => !match.actual_time && match.predicted_time > now)
-    .sort((a, b) => a.predicted_time - b.predicted_time);
-  */
 }
 
 export function getOpponentMatches(
   selectedMatch: TBAMatch,
   allMatches: TBAMatch[]
 ): TBAMatch[] {
-  // Get all teams from the selected match (both alliances)
   const teams = [
     ...selectedMatch.alliances.red.team_keys,
     ...selectedMatch.alliances.blue.team_keys,
   ];
-
-  // Find all matches where these teams are playing
   const opponentMatches = allMatches.filter(match => {
     const matchTeams = [
       ...match.alliances.red.team_keys,

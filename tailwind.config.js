@@ -28,10 +28,16 @@ module.exports = {
         foreground: "rgb(var(--foreground-rgb))",
         border: "rgb(209 213 219)",
         input: "rgb(209 213 219)",
-        ring: "rgb(59 130 246)",
+        ring: "#2F5AA8",
         primary: {
-          DEFAULT: "rgb(59 130 246)",
+          DEFAULT: "#2F5AA8",
           foreground: "rgb(255 255 255)",
+        },
+        brandBlue: {
+          DEFAULT: "#1F3B73",
+          muted: "#16294F",
+          soft: "#264A8A",
+          accent: "#2F5AA8",
         },
         secondary: {
           DEFAULT: "rgb(107 114 128)",

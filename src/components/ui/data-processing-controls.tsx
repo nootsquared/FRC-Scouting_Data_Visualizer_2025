@@ -32,7 +32,7 @@ export function DataProcessingControls({
             <button
               className={`rounded-full px-6 py-2 transition-all duration-200 ${
                 currentMode === "average"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  ? "bg-brandBlue-accent hover:bg-brandBlue text-white"
                   : "bg-transparent border border-gray-700 text-gray-300 hover:bg-gray-800"
               }`}
               onClick={() => onModeChange("average")}
@@ -42,7 +42,7 @@ export function DataProcessingControls({
             <button
               className={`rounded-full px-6 py-2 transition-all duration-200 ${
                 currentMode === "top50"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  ? "bg-brandBlue-accent hover:bg-brandBlue text-white"
                   : "bg-transparent border border-gray-700 text-gray-300 hover:bg-gray-800"
               }`}
               onClick={() => onModeChange("top50")}
@@ -52,7 +52,7 @@ export function DataProcessingControls({
             <button
               className={`rounded-full px-6 py-2 transition-all duration-200 ${
                 currentMode === "best"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  ? "bg-brandBlue-accent hover:bg-brandBlue text-white"
                   : "bg-transparent border border-gray-700 text-gray-300 hover:bg-gray-800"
               }`}
               onClick={() => onModeChange("best")}
@@ -67,7 +67,7 @@ export function DataProcessingControls({
               onCheckedChange={(checked) =>
                 onZeroHandlingChange(checked ? "exclude" : "include")
               }
-              className="data-[state=checked]:bg-blue-600"
+              className="data-[state=checked]:bg-brandBlue-accent"
             />
             <span className="text-gray-300">
               Exclude Zero Values
