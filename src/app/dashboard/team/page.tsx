@@ -39,18 +39,19 @@ import { DataSourceSelector, type DataSource } from "@/components/ui/data-source
 import { useRouter } from "next/navigation";
 
 // Icons
-import { 
-  LayoutDashboard, 
-  LineChart, 
-  Users, 
-  FolderOpen, 
-  Database, 
-  FileText, 
-  FileCode2, 
-  Settings, 
-  HelpCircle, 
-  Plus
+import {
+  LayoutDashboard,
+  LineChart,
+  Users,
+  FolderOpen,
+  Database,
+  FileText,
+  FileCode2,
+  Settings,
+  HelpCircle,
+  Plus,
 } from "lucide-react";
+import { FrostedBarCursor } from "@/components/charts/FrostedBarCursor";
 
 // Add this custom tooltip style object
 const tooltipStyle = {
@@ -483,6 +484,7 @@ export default function TeamPage() {
                     contentStyle={tooltipStyle}
                     labelStyle={tooltipLabelStyle}
                     itemStyle={tooltipItemStyle}
+                    cursor={<FrostedBarCursor />}
                   />
                   <Legend />
                   <Bar dataKey="L4" stackId="a" fill="#8B5CF6" />
@@ -509,6 +511,7 @@ export default function TeamPage() {
                     contentStyle={tooltipStyle}
                     labelStyle={tooltipLabelStyle}
                     itemStyle={tooltipItemStyle}
+                    cursor={<FrostedBarCursor />}
                   />
                   <Legend />
                   <Bar dataKey="L4" stackId="a" fill="#8B5CF6" />
@@ -535,6 +538,7 @@ export default function TeamPage() {
                     contentStyle={tooltipStyle}
                     labelStyle={tooltipLabelStyle}
                     itemStyle={tooltipItemStyle}
+                    cursor={<FrostedBarCursor />}
                   />
                   <Legend />
                   <Bar dataKey="Processor" stackId="a" fill="#10B981" />
@@ -559,6 +563,7 @@ export default function TeamPage() {
                     contentStyle={tooltipStyle}
                     labelStyle={tooltipLabelStyle}
                     itemStyle={tooltipItemStyle}
+                    cursor={<FrostedBarCursor />}
                   />
                   <Legend />
                   <Bar dataKey="Processor" stackId="a" fill="#10B981" />

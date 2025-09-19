@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Key, Calendar } from "lucide-react";
-import { TBAMatch } from '@/types/tba';
+import { Search, Settings as SettingsIcon } from "lucide-react";
+import type { TBAMatch } from "@/types/tba";
 import Link from "next/link";
 import { useAppContext } from "@/lib/context/AppContext";
 import { useRouter } from "next/navigation";
-
-const TBA_API_BASE = 'https://www.thebluealliance.com/api/v3';
 
 interface MatchesToScout {
   targetMatch: TBAMatch;
@@ -28,10 +26,14 @@ interface ConsolidatedMatch {
 
 export default function TargetedPlanningPage() {
   const router = useRouter();
-  const { setTeamNumber: setGlobalTeamNumber } = useAppContext();
+  const {
+    setTeamNumber: setGlobalTeamNumber,
+    config,
+    configLoading,
+    configError,
+  } = useAppContext();
+
   const [teamNumber, setTeamNumber] = useState("226");
-  const [eventCode, setEventCode] = useState("");
-  const [tbaKey, setTbaKey] = useState("");
   const [matches, setMatches] = useState<TBAMatch[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<TBAMatch[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<TBAMatch | null>(null);
@@ -40,22 +42,22 @@ export default function TargetedPlanningPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const configuredEventCode = config?.eventCode ?? "";
+  const hasConfiguredCredentials = useMemo(
+    () => Boolean(config?.tbaApiKey && config?.eventCode),
+    [config?.eventCode, config?.tbaApiKey]
+  );
+
   // Load saved values from localStorage
   useEffect(() => {
-    const savedKey = localStorage.getItem('tbaKey');
-    const savedEventCode = localStorage.getItem('eventCode');
-    const savedMatches = localStorage.getItem('tbaMatches');
-    const savedUpcomingMatches = localStorage.getItem('tbaUpcomingMatches');
-    const savedSelectedMatch = localStorage.getItem('tbaSelectedMatch');
-    const savedMatchesToScout = localStorage.getItem('tbaMatchesToScout');
-    const savedConsolidatedMatches = localStorage.getItem('tbaConsolidatedMatches');
+    const savedTeam = localStorage.getItem("targetedPlanningTeamNumber");
+    const savedMatches = localStorage.getItem("tbaMatches");
+    const savedUpcomingMatches = localStorage.getItem("tbaUpcomingMatches");
+    const savedSelectedMatch = localStorage.getItem("tbaSelectedMatch");
+    const savedMatchesToScout = localStorage.getItem("tbaMatchesToScout");
+    const savedConsolidatedMatches = localStorage.getItem("tbaConsolidatedMatches");
 
-    if (savedKey) setTbaKey(savedKey);
-    if (savedEventCode) {
-      setEventCode(savedEventCode);
-    } else {
-      setEventCode("2024miket"); // Set default to Michigan State Championship
-    }
+    if (savedTeam) setTeamNumber(savedTeam);
     if (savedMatches) setMatches(JSON.parse(savedMatches));
     if (savedUpcomingMatches) setUpcomingMatches(JSON.parse(savedUpcomingMatches));
     if (savedSelectedMatch) setSelectedMatch(JSON.parse(savedSelectedMatch));
@@ -63,171 +65,140 @@ export default function TargetedPlanningPage() {
     if (savedConsolidatedMatches) setConsolidatedMatches(JSON.parse(savedConsolidatedMatches));
   }, []);
 
-  // Save state to localStorage when it changes
+  // Persist frequently used state
   useEffect(() => {
-    if (matches.length > 0) localStorage.setItem('tbaMatches', JSON.stringify(matches));
-    if (upcomingMatches.length > 0) localStorage.setItem('tbaUpcomingMatches', JSON.stringify(upcomingMatches));
-    if (selectedMatch) localStorage.setItem('tbaSelectedMatch', JSON.stringify(selectedMatch));
-    if (matchesToScout.length > 0) localStorage.setItem('tbaMatchesToScout', JSON.stringify(matchesToScout));
-    if (consolidatedMatches.length > 0) localStorage.setItem('tbaConsolidatedMatches', JSON.stringify(consolidatedMatches));
+    if (teamNumber) {
+      localStorage.setItem("targetedPlanningTeamNumber", teamNumber);
+    }
+  }, [teamNumber]);
+
+  useEffect(() => {
+    if (matches.length > 0) localStorage.setItem("tbaMatches", JSON.stringify(matches));
+    if (upcomingMatches.length > 0)
+      localStorage.setItem("tbaUpcomingMatches", JSON.stringify(upcomingMatches));
+    if (selectedMatch) localStorage.setItem("tbaSelectedMatch", JSON.stringify(selectedMatch));
+    if (matchesToScout.length > 0)
+      localStorage.setItem("tbaMatchesToScout", JSON.stringify(matchesToScout));
+    if (consolidatedMatches.length > 0)
+      localStorage.setItem("tbaConsolidatedMatches", JSON.stringify(consolidatedMatches));
   }, [matches, upcomingMatches, selectedMatch, matchesToScout, consolidatedMatches]);
 
-  const fetchMatches = async () => {
-    if (!tbaKey) {
-      console.log('No TBA API key provided');
-      setError('Please enter your TBA API key');
+  const fetchMatches = useCallback(async () => {
+    if (!teamNumber) {
+      setError("Please enter a team number.");
       return;
     }
 
-    if (!eventCode) {
-      console.log('No event code provided');
-      setError('Please enter an event code');
+    if (!hasConfiguredCredentials) {
+      setError("TBA API key or event code not configured. Update settings before fetching matches.");
       return;
     }
 
-    console.log('Fetching matches with:', {
-      teamNumber,
-      eventCode,
-      tbaKeyLength: tbaKey.length,
-      tbaKeyPrefix: tbaKey.substring(0, 5) + '...'
-    });
-    
     setLoading(true);
     setError(null);
 
     try {
-      // Test the API key first with a simple request
-      const testResponse = await fetch(
-        `${TBA_API_BASE}/status`,
-        {
-          headers: {
-            'X-TBA-Auth-Key': tbaKey,
-          },
-        }
-      );
-
-      if (!testResponse.ok) {
-        console.error('API Key validation failed:', await testResponse.text());
-        throw new Error('Invalid API key');
-      }
-
-      // Fetch team-specific matches
-      const url = `${TBA_API_BASE}/team/frc${teamNumber}/event/${eventCode}/matches`;
-      console.log('Fetching from URL:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          'X-TBA-Auth-Key': tbaKey,
-        },
+      const response = await fetch(`/api/tba/matches?teamNumber=${encodeURIComponent(teamNumber)}`, {
+        cache: "no-store",
       });
 
+      const payload = await response.json().catch(() => null);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('TBA API Error Response:', {
-          url,
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-        throw new Error(`TBA API error: ${response.status} - ${errorText}`);
+        throw new Error(payload?.message ?? `Failed to fetch matches (status ${response.status}).`);
       }
 
-      const teamMatches = await response.json();
-      console.log('Received team matches:', teamMatches);
-
-      // Also fetch all event matches for opponent lookup
-      const allMatchesResponse = await fetch(
-        `${TBA_API_BASE}/event/${eventCode}/matches`,
-        {
-          headers: {
-            'X-TBA-Auth-Key': tbaKey,
-          },
-        }
-      );
-
-      if (!allMatchesResponse.ok) {
-        throw new Error(`Failed to fetch all matches: ${allMatchesResponse.statusText}`);
+      if (
+        !payload ||
+        !Array.isArray((payload as any).teamMatches) ||
+        !Array.isArray((payload as any).eventMatches)
+      ) {
+        throw new Error('Unexpected response format from the TBA proxy.');
       }
 
-      const allMatches = await allMatchesResponse.json();
-      setMatches(allMatches);
+      const { teamMatches, eventMatches } = payload as {
+        teamMatches: TBAMatch[];
+        eventMatches: TBAMatch[];
+      };
 
-      // Filter and sort the team's matches
-      const upcoming = teamMatches
-        .filter((match: TBAMatch) => {
-          // Only include qualification matches
-          return match.comp_level === 'qm';
-        })
-        .sort((a: TBAMatch, b: TBAMatch) => {
-          // Sort by match number
-          return a.match_number - b.match_number;
-        });
-      
-      console.log('Filtered and sorted matches:', upcoming.map((match: TBAMatch) => ({
-        number: match.match_number,
-        type: match.comp_level
-      })));
-      
+      setMatches(eventMatches ?? []);
+
+      const upcoming = (teamMatches ?? [])
+        .filter((match) => match.comp_level === "qm")
+        .sort((a, b) => a.match_number - b.match_number);
+
       setUpcomingMatches(upcoming);
-      
-      // Save valid TBA key
-      const trimmedKey = tbaKey.trim();
-      setTbaKey(trimmedKey);
-      localStorage.setItem('tbaKey', trimmedKey);
-      console.log('Saving TBA API Key (first 5 chars):', trimmedKey.substring(0, 5));
+
+      if (upcoming.length === 0) {
+        setError("No qualification matches found for this team at the configured event.");
+      }
     } catch (err) {
-      console.error('Error fetching matches:', err);
-      setError('Failed to fetch matches. Please check your API key and event code and try again.');
+      console.error("Error fetching matches:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch matches. Please try again later."
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [hasConfiguredCredentials, teamNumber]);
+
+  useEffect(() => {
+    if (configLoading) return;
+
+    if (configError) {
+      setError(configError);
+      return;
+    }
+
+    if (!hasConfiguredCredentials) {
+      setError("Add a TBA API key and event code in Settings to load targeted planning data.");
+      return;
+    }
+
+    setError(null);
+    fetchMatches();
+  }, [configLoading, configError, hasConfiguredCredentials, fetchMatches]);
 
   const handleMatchSelect = (match: TBAMatch) => {
     setSelectedMatch(match);
-    
-    // Find index of selected match in upcoming matches
-    const selectedIndex = upcomingMatches.findIndex(m => m.key === match.key);
+
+    const selectedIndex = upcomingMatches.findIndex((m) => m.key === match.key);
     if (selectedIndex === -1) return;
 
-    // Get the next two matches after the selected match
     const nextTwoMatches = upcomingMatches.slice(selectedIndex + 1, selectedIndex + 3);
     if (nextTwoMatches.length === 0) return;
 
-    // For each of the next two matches, find all matches to scout
-    const matchesToScout = nextTwoMatches.map(targetMatch => {
-      // Get all teams in the target match
+    const assignments = nextTwoMatches.map((targetMatch) => {
       const targetTeams = [
         ...targetMatch.alliances.red.team_keys,
         ...targetMatch.alliances.blue.team_keys,
-      ].filter(team => team !== `frc${teamNumber}`);
+      ].filter((team) => team !== `frc${teamNumber}`);
 
-      // Find all matches between selected match and target match
       const targetMatchTime = targetMatch.predicted_time || targetMatch.time;
       const selectedMatchTime = match.predicted_time || match.time;
       const relevantMatches = matches
-        .filter(m => {
+        .filter((m) => {
           const matchTime = m.predicted_time || m.time;
           return matchTime > selectedMatchTime && matchTime < targetMatchTime;
         })
         .sort((a, b) => (a.predicted_time || a.time) - (b.predicted_time || b.time));
 
-      // For each match, identify which teams from our target match are playing
-      const matchesWithTeams = relevantMatches.map(match => {
-        const matchTeams = [
-          ...match.alliances.red.team_keys,
-          ...match.alliances.blue.team_keys,
-        ];
-        const teamsToScout = targetTeams
-          .filter(team => matchTeams.includes(team))
-          .map(team => team.replace('frc', ''));
+      const matchesWithTeams = relevantMatches
+        .map((candidateMatch) => {
+          const matchTeams = [
+            ...candidateMatch.alliances.red.team_keys,
+            ...candidateMatch.alliances.blue.team_keys,
+          ];
+          const teamsToScout = targetTeams
+            .filter((team) => matchTeams.includes(team))
+            .map((team) => team.replace("frc", ""));
 
-        return {
-          match,
-          teamsToScout,
-        };
-      }).filter(item => item.teamsToScout.length > 0);
+          return {
+            match: candidateMatch,
+            teamsToScout,
+          };
+        })
+        .filter((item) => item.teamsToScout.length > 0);
 
       return {
         targetMatch,
@@ -235,17 +206,16 @@ export default function TargetedPlanningPage() {
       };
     });
 
-    setMatchesToScout(matchesToScout);
+    setMatchesToScout(assignments);
 
-    // Create consolidated view
     const allMatches = new Map<number, Set<string>>();
-    
-    matchesToScout.forEach(({ matchesToScout }) => {
+
+    assignments.forEach(({ matchesToScout }) => {
       matchesToScout.forEach(({ match, teamsToScout }) => {
         if (!allMatches.has(match.match_number)) {
           allMatches.set(match.match_number, new Set());
         }
-        teamsToScout.forEach(team => {
+        teamsToScout.forEach((team) => {
           allMatches.get(match.match_number)?.add(team);
         });
       });
@@ -267,41 +237,32 @@ export default function TargetedPlanningPage() {
   };
 
   const getMatchPartners = (match: TBAMatch): string[] => {
-    const alliance = match.alliances.red.team_keys.includes(`frc${teamNumber}`) ? 'red' : 'blue';
+    const alliance = match.alliances.red.team_keys.includes(`frc${teamNumber}`) ? "red" : "blue";
     return match.alliances[alliance].team_keys
-      .map(key => key.replace('frc', ''))
-      .filter(key => key !== teamNumber);
+      .map((key) => key.replace("frc", ""))
+      .filter((key) => key !== teamNumber);
   };
 
   const getMatchOpponents = (match: TBAMatch): string[] => {
-    const alliance = match.alliances.red.team_keys.includes(`frc${teamNumber}`) ? 'red' : 'blue';
-    const oppositeAlliance = alliance === 'red' ? 'blue' : 'red';
-    return match.alliances[oppositeAlliance].team_keys.map(key => key.replace('frc', ''));
+    const alliance = match.alliances.red.team_keys.includes(`frc${teamNumber}`) ? "red" : "blue";
+    const oppositeAlliance = alliance === "red" ? "blue" : "red";
+    return match.alliances[oppositeAlliance].team_keys.map((key) => key.replace("frc", ""));
   };
 
   const getTeamsInMatch = (match: TBAMatch): string => {
     const teams = [
       ...match.alliances.red.team_keys,
-      ...match.alliances.blue.team_keys
-    ].map(key => key.replace('frc', ''));
-    return teams.join(', ');
+      ...match.alliances.blue.team_keys,
+    ].map((key) => key.replace("frc", ""));
+    return teams.join(", ");
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Trim the API key before saving and using it
-    const trimmedKey = tbaKey.trim();
-    setTbaKey(trimmedKey);
-    localStorage.setItem('tbaKey', trimmedKey);
-    console.log('Saving TBA API Key (first 5 chars):', trimmedKey.substring(0, 5));
-    fetchMatches();
-  };
-
-  const handleEventCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEventCode = e.target.value.trim();
-    setEventCode(newEventCode);
-    localStorage.setItem('eventCode', newEventCode);
-    console.log('Saving Event Code:', newEventCode);
+    setSelectedMatch(null);
+    setMatchesToScout([]);
+    setConsolidatedMatches([]);
+    await fetchMatches();
   };
 
   const handleTeamClick = (teamNum: string) => {
@@ -312,7 +273,7 @@ export default function TargetedPlanningPage() {
   const TeamLink = ({ teamNumber }: { teamNumber: string }) => (
     <button
       onClick={() => handleTeamClick(teamNumber)}
-      className="text-blue-400 hover:text-blue-300 hover:underline"
+      className="text-brandBlue-accent hover:text-brandBlue-soft hover:underline"
     >
       {teamNumber}
     </button>
@@ -321,70 +282,81 @@ export default function TargetedPlanningPage() {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Targeted Planning</h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Targeted Planning</h1>
+            <p className="text-gray-400 mt-2">
+              Use configuration values to plan which teams to scout before your upcoming matches.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/settings"
+            className="inline-flex items-center gap-2 text-sm text-brandBlue-accent hover:text-brandBlue-soft"
+          >
+            <SettingsIcon className="h-4 w-4" />
+            Manage Settings
+          </Link>
+        </div>
 
-        {/* API Key Input */}
         <Card className="bg-[#1A1A1A] border-gray-800">
           <CardHeader>
-            <CardTitle className="text-xl text-white">TBA API Key</CardTitle>
+            <CardTitle className="text-xl text-white">Team & Event Context</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative">
-              <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <Input
-                type="password"
-                placeholder="Enter your TBA API key"
-                value={tbaKey}
-                onChange={(e) => setTbaKey(e.target.value)}
-                className="w-full pl-10 bg-[#1A1A1A] border-gray-800 text-white placeholder-gray-400"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Team and Event Search */}
-        <Card className="bg-[#1A1A1A] border-gray-800">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">Team and Event Selection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSearch} className="flex gap-4 items-center">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <Input
-                  placeholder="Enter Team Number"
-                  value={teamNumber}
-                  onChange={(e) => setTeamNumber(e.target.value)}
-                  className="w-[200px] pl-10 bg-[#1A1A1A] border-gray-800 text-white placeholder-gray-400"
-                />
+            <form
+              onSubmit={handleSearch}
+              className="flex flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end"
+            >
+              <div className="md:pr-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="team-number">
+                  Team Number
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Input
+                    id="team-number"
+                    placeholder="Enter Team Number"
+                    value={teamNumber}
+                    onChange={(e) => setTeamNumber(e.target.value)}
+                    className="w-full pl-10 bg-[#1A1A1A] border-gray-800 text-white placeholder-gray-400"
+                  />
+                </div>
               </div>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <div className="md:pr-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Event Code
+                </label>
                 <Input
-                  placeholder="Enter Event Code (e.g., 2024onosh)"
-                  value={eventCode}
-                  onChange={handleEventCodeChange}
-                  className="w-[300px] pl-10 bg-[#1A1A1A] border-gray-800 text-white placeholder-gray-400"
+                  value={configuredEventCode || ""}
+                  placeholder="Not configured"
+                  readOnly
+                  className="w-full bg-[#111111] border-gray-800 text-gray-100 placeholder-gray-500"
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  Update the event code in Settings if this is not the event you expect.
+                </p>
               </div>
-              <Button 
-                type="submit" 
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={loading || !tbaKey}
+              <Button
+                type="submit"
+                className="bg-brandBlue-accent hover:bg-brandBlue text-white"
+                disabled={loading || configLoading}
               >
-                {loading ? "Loading..." : "Search"}
+                {loading ? "Loading..." : "Refresh"}
               </Button>
             </form>
+            {!hasConfiguredCredentials && !configLoading && (
+              <div className="mt-4 rounded-md border border-yellow-600/70 bg-yellow-900/30 px-4 py-3 text-sm text-yellow-200">
+                Add your TBA API key and event code on the Settings page to enable targeted planning.
+              </div>
+            )}
+            {error && (
+              <div className="mt-4 rounded-md border border-red-600/70 bg-red-900/30 px-4 py-3 text-sm text-red-200">
+                {error}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {error && (
-          <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-
-        {/* Upcoming Matches */}
         {upcomingMatches.length > 0 && (
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
@@ -396,19 +368,26 @@ export default function TargetedPlanningPage() {
                   <Button
                     key={match.key}
                     variant={selectedMatch?.key === match.key ? "default" : "outline"}
-                    className={`h-auto py-4 px-6 text-left ${
+                    className={`h-auto rounded-xl border text-left transition-all duration-200 ${
                       selectedMatch?.key === match.key
-                        ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
-                        : "bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+                        ? "bg-brandBlue-accent text-white border-brandBlue-accent hover:bg-brandBlue-soft"
+                        : "bg-[#111111] text-white border-gray-800 hover:bg-gray-800/50 hover:border-gray-500 hover:backdrop-blur-sm hover:shadow-lg"
                     }`}
                     onClick={() => handleMatchSelect(match)}
                   >
-                    <div>
-                      <div className="font-medium">
-                        Match {match.match_number}
+                    <div className="space-y-2">
+                      <div className="text-sm uppercase tracking-[0.2em] text-gray-400">Qualifier</div>
+                      <div className="text-2xl font-semibold">Match {match.match_number}</div>
+                      <div className="text-sm text-gray-300">
+                        Partners: {getMatchPartners(match).join(", ") || "TBD"}
                       </div>
-                      <div className="text-sm mt-1">
-                        {formatMatchTime(match.predicted_time || match.time)}
+                      <div className="text-sm text-gray-300">
+                        Opponents: {getMatchOpponents(match).join(", ") || "TBD"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {match.predicted_time || match.time
+                          ? `Scheduled: ${formatMatchTime(match.predicted_time || match.time)}`
+                          : "Time TBD"}
                       </div>
                     </div>
                   </Button>
@@ -418,89 +397,88 @@ export default function TargetedPlanningPage() {
           </Card>
         )}
 
-        {/* Matches to Scout Tables */}
-        {selectedMatch && matchesToScout.map((matchData, index) => (
-          <Card key={matchData.targetMatch.key} className="bg-[#1A1A1A] border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-xl text-white">
-                Matches to Scout for {index === 0 ? 'Next' : 'Following'} Match ({matchData.targetMatch.match_number})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-800">
-                      <TableHead className="text-gray-300">Match</TableHead>
-                      <TableHead className="text-gray-300">Time</TableHead>
-                      <TableHead className="text-gray-300">Teams to Scout</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {matchData.matchesToScout.map(({ match, teamsToScout }) => (
-                      <TableRow key={match.key} className="border-gray-800">
-                        <TableCell className="text-gray-300 font-medium">
-                          Match {match.match_number}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {formatMatchTime(match.predicted_time || match.time)}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {teamsToScout.map((team, idx) => (
-                            <>
-                              <TeamLink key={team} teamNumber={team} />
-                              {idx < teamsToScout.length - 1 ? ', ' : ''}
-                            </>
-                          ))}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {matchData.matchesToScout.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-gray-400">
-                          No matches to scout before Match {matchData.targetMatch.match_number}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Consolidated View */}
-        {selectedMatch && consolidatedMatches.length > 0 && (
+        {matchesToScout.length > 0 && (
           <Card className="bg-[#1A1A1A] border-gray-800">
             <CardHeader>
-              <CardTitle className="text-xl text-white">
-                All Teams to Scout by Match
-              </CardTitle>
+              <CardTitle className="text-xl text-white">Matches to Scout Before Selected Match</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {matchesToScout.map(({ targetMatch, matchesToScout }) => (
+                <div key={targetMatch.key} className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Target Match {targetMatch.match_number} ({getTeamsInMatch(targetMatch)})
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      Scout these teams in matches happening before the target match.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {matchesToScout.length === 0 ? (
+                      <p className="text-sm text-gray-400">
+                        No relevant matches found before this target match.
+                      </p>
+                    ) : (
+                      matchesToScout.map(({ match, teamsToScout }) => (
+                        <div
+                          key={match.key}
+                          className="rounded-lg border border-gray-800 bg-[#111111] p-4"
+                        >
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
+                            <span className="font-semibold text-white">
+                              Match {match.match_number}
+                            </span>
+                            <span className="text-gray-500">
+                              {match.predicted_time || match.time
+                                ? formatMatchTime(match.predicted_time || match.time)
+                                : "Time TBD"}
+                            </span>
+                            <span className="text-gray-500">
+                              Teams: {getTeamsInMatch(match)}
+                            </span>
+                          </div>
+                          <div className="mt-2 text-sm text-brandBlue-accent">
+                            Focus Teams: {teamsToScout.join(", ")}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {consolidatedMatches.length > 0 && (
+          <Card className="bg-[#1A1A1A] border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-xl text-white">Consolidated Scouting Plan</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {consolidatedMatches.map(({ matchNumber, teams }) => (
-                  <div 
-                    key={matchNumber}
-                    className="bg-gray-800/50 rounded-lg p-4"
-                  >
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      Match {matchNumber}
-                    </h3>
-                    <div className="text-gray-300 space-y-1">
-                      {teams.map(team => (
-                        <div key={team} className="text-sm">
-                          <TeamLink teamNumber={team} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-800">
+                    <TableHead className="text-gray-400">Match</TableHead>
+                    <TableHead className="text-gray-400">Teams to Scout</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {consolidatedMatches.map((match) => (
+                    <TableRow key={match.matchNumber} className="border-gray-800">
+                      <TableCell className="text-white">Match {match.matchNumber}</TableCell>
+                      <TableCell className="text-gray-300">
+                        {match.teams.length > 0 ? match.teams.join(", ") : "None"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
       </div>
     </div>
   );
-} 
+}

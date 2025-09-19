@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,19 +26,6 @@ interface TBAMatch {
     };
   };
 }
-
-interface TeamEPAData {
-  teamNumber: string;
-  epa: number;
-}
-
-interface AllianceEPAData {
-  teams: TeamEPAData[];
-  totalEPA: number;
-  winPercentage: number;
-}
-
-type EPACalculationMethod = "average" | "median" | "highest" | "lowest";
 
 interface TeamPredictionData {
   teamNumber: string;
@@ -73,6 +60,145 @@ interface AlliancePredictionData {
   teams: TeamPredictionData[];
   totalExpectedScore: number;
   winPercentage: number;
+  autonExpected: number;
+  teleopExpected: number;
+  endgameExpected: number;
+  confidence: number;
+  climbPotential: number;
+}
+
+type StatusTone = "positive" | "warning" | "negative" | "info";
+
+interface AllianceMetrics {
+  autonExpected: number;
+  teleopExpected: number;
+  endgameExpected: number;
+  totalExpected: number;
+  climbPotential: number;
+  confidence: number;
+}
+
+const createEmptyAlliance = (): AlliancePredictionData => ({
+  teams: [],
+  totalExpectedScore: 0,
+  winPercentage: 0,
+  autonExpected: 0,
+  teleopExpected: 0,
+  endgameExpected: 0,
+  confidence: 0,
+  climbPotential: 0,
+});
+
+const hydrateAllianceData = (raw: string | null): AlliancePredictionData => {
+  if (!raw) return createEmptyAlliance();
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<AlliancePredictionData>;
+    return {
+      ...createEmptyAlliance(),
+      ...parsed,
+      teams: Array.isArray(parsed?.teams) ? parsed.teams : [],
+      totalExpectedScore: Number(parsed?.totalExpectedScore ?? 0),
+      winPercentage: Number(parsed?.winPercentage ?? 0),
+      autonExpected: Number(parsed?.autonExpected ?? 0),
+      teleopExpected: Number(parsed?.teleopExpected ?? 0),
+      endgameExpected: Number(parsed?.endgameExpected ?? 0),
+      confidence: Number(parsed?.confidence ?? 0),
+      climbPotential: Number(parsed?.climbPotential ?? 0),
+    };
+  } catch (error) {
+    console.warn('Failed to hydrate alliance data from localStorage', error);
+    return createEmptyAlliance();
+  }
+};
+
+const StatusPill = ({ children, tone }: { children: ReactNode; tone: StatusTone }) => {
+  const toneClasses: Record<StatusTone, string> = {
+    positive: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40",
+    warning: "bg-amber-500/20 text-amber-200 border-amber-500/40",
+    negative: "bg-red-500/20 text-red-200 border-red-500/40",
+    info: "bg-brandBlue-accent/20 text-brandBlue-soft border-brandBlue-accent/40",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${toneClasses[tone]}`}
+    >
+      {children}
+    </span>
+  );
+};
+
+function aggregateAllianceMetrics(teams: TeamPredictionData[]): AllianceMetrics {
+  if (teams.length === 0) {
+    return {
+      autonExpected: 0,
+      teleopExpected: 0,
+      endgameExpected: 0,
+      totalExpected: 0,
+      climbPotential: 0,
+      confidence: 0,
+    };
+  }
+
+  const MAX_CLIMB_POINTS = 12;
+
+  const totals = teams.reduce(
+    (acc, team) => {
+      acc.auton += team.auton.expectedPoints;
+      acc.teleop += team.teleop.expectedPoints;
+      acc.endgame += team.endgame.expectedPoints;
+      acc.climbReliability += Math.min(team.endgame.expectedPoints / MAX_CLIMB_POINTS, 1);
+
+      const matchDepth = Math.min(team.matchCount, 12) / 12;
+      const stability = team.hasEnoughData ? 0.4 : 0.2;
+      const confidenceContribution = Math.min(1, matchDepth * 0.6 + stability);
+      acc.confidence += confidenceContribution;
+
+      return acc;
+    },
+    {
+      auton: 0,
+      teleop: 0,
+      endgame: 0,
+      climbReliability: 0,
+      confidence: 0,
+    }
+  );
+
+  const allianceCount = teams.length;
+
+  return {
+    autonExpected: totals.auton,
+    teleopExpected: totals.teleop,
+    endgameExpected: totals.endgame,
+    totalExpected: totals.auton + totals.teleop + totals.endgame,
+    climbPotential: totals.climbReliability / allianceCount,
+    confidence: totals.confidence / allianceCount,
+  };
+}
+
+function projectMatchOutcome(red: AllianceMetrics, blue: AllianceMetrics) {
+  const totalDiff = red.totalExpected - blue.totalExpected;
+  const autonDiff = red.autonExpected - blue.autonExpected;
+  const teleopDiff = red.teleopExpected - blue.teleopExpected;
+  const endgameDiff = red.endgameExpected - blue.endgameExpected;
+  const climbDiff = red.climbPotential - blue.climbPotential;
+  const confidenceDiff = red.confidence - blue.confidence;
+
+  const momentum =
+    totalDiff * 0.08 +
+    autonDiff * 0.05 +
+    teleopDiff * 0.04 +
+    endgameDiff * 0.06 +
+    climbDiff * 1.25 +
+    confidenceDiff * 1.1;
+
+  const probability = 1 / (1 + Math.exp(-momentum));
+  const redWinPercentage = Math.round(probability * 1000) / 10;
+  const blueWinPercentage = Math.round((1 - probability) * 1000) / 10;
+
+  return { redWinPercentage, blueWinPercentage };
 }
 
 export default function MatchAnalysisPage() {
@@ -81,36 +207,85 @@ export default function MatchAnalysisPage() {
     processingMode,
     setProcessingMode,
     zeroHandling,
-    setZeroHandling
+    setZeroHandling,
+    config,
+    configLoading,
+    configError,
   } = useAppContext();
   const [matchNumber, setMatchNumber] = useState<string>("");
   const [matchData, setMatchData] = useState<TBAMatch | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<DataSource>("live");
-  const [tbaKey, setTbaKey] = useState<string>("");
-  const [eventCode, setEventCode] = useState<string>("");
-  const [redAllianceData, setRedAllianceData] = useState<AlliancePredictionData>({ teams: [], totalExpectedScore: 0, winPercentage: 0 });
-  const [blueAllianceData, setBlueAllianceData] = useState<AlliancePredictionData>({ teams: [], totalExpectedScore: 0, winPercentage: 0 });
+  const [redAllianceData, setRedAllianceData] = useState<AlliancePredictionData>(() => createEmptyAlliance());
+  const [blueAllianceData, setBlueAllianceData] = useState<AlliancePredictionData>(() => createEmptyAlliance());
+
+  const predictionsReady =
+    redAllianceData.teams.length > 0 &&
+    blueAllianceData.teams.length > 0 &&
+    matchData !== null;
+
+  const projectedWinner = redAllianceData.winPercentage === blueAllianceData.winPercentage
+    ? "Dead Heat"
+    : redAllianceData.winPercentage > blueAllianceData.winPercentage
+      ? "Red Alliance"
+      : "Blue Alliance";
+
+  const projectedWinnerTone = projectedWinner === "Red Alliance"
+    ? "text-red-400"
+    : projectedWinner === "Blue Alliance"
+      ? "text-brandBlue-accent"
+      : "text-gray-300";
+
+  const projectedSpread = Math.abs(
+    redAllianceData.totalExpectedScore - blueAllianceData.totalExpectedScore
+  );
+
+  const aggregateConfidence = Math.min(
+    1,
+    (redAllianceData.confidence + blueAllianceData.confidence) / 2
+  );
+
+  const climbReliabilityGap = Math.abs(
+    redAllianceData.climbPotential - blueAllianceData.climbPotential
+  );
+
+  const dataSourceNotice = dataSource === "live"
+    ? {
+        container: "bg-yellow-900/30 border border-yellow-700 text-yellow-200",
+        title: "Live Data Snapshot",
+        description:
+          "The live scouting feed is still filling in. Expect lighter sample sizes until your team uploads more results.",
+      }
+    : {
+        container: "bg-[#1b2538] border border-brandBlue-accent/40 text-brandBlue-soft",
+        title: "Pre-scout Dataset",
+        description:
+          "Using historical pre-scout metrics. Switch back to Live to reflect in-event performance as it becomes available.",
+      };
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('tbaKey');
-    const savedEventCode = localStorage.getItem('eventCode');
     const savedMatchNumber = localStorage.getItem('matchAnalysisMatchNumber');
     const savedMatchData = localStorage.getItem('matchAnalysisData');
     const savedRedAllianceData = localStorage.getItem('matchAnalysisRedAllianceData');
     const savedBlueAllianceData = localStorage.getItem('matchAnalysisBlueAllianceData');
-    
-    if (savedKey) setTbaKey(savedKey);
-    if (savedEventCode) {
-      setEventCode(savedEventCode);
-    } else {
-      setEventCode("2024onosh");
-    }
+
     if (savedMatchNumber) setMatchNumber(savedMatchNumber);
-    if (savedMatchData) setMatchData(JSON.parse(savedMatchData));
-    if (savedRedAllianceData) setRedAllianceData(JSON.parse(savedRedAllianceData));
-    if (savedBlueAllianceData) setBlueAllianceData(JSON.parse(savedBlueAllianceData));
+    if (savedMatchData) {
+      try {
+        setMatchData(JSON.parse(savedMatchData));
+      } catch (error) {
+        console.warn('Failed to hydrate match data from localStorage', error);
+      }
+    }
+
+    if (savedRedAllianceData) {
+      setRedAllianceData(hydrateAllianceData(savedRedAllianceData));
+    }
+
+    if (savedBlueAllianceData) {
+      setBlueAllianceData(hydrateAllianceData(savedBlueAllianceData));
+    }
   }, []);
 
   useEffect(() => {
@@ -120,68 +295,87 @@ export default function MatchAnalysisPage() {
     if (blueAllianceData) localStorage.setItem('matchAnalysisBlueAllianceData', JSON.stringify(blueAllianceData));
   }, [matchNumber, matchData, redAllianceData, blueAllianceData]);
 
-  const processTeamPredictions = useCallback((matchData: TBAMatch) => {
-    const redTeamNumbers = matchData.alliances.red.team_keys.map(key => key.replace("frc", ""));
-    const blueTeamNumbers = matchData.alliances.blue.team_keys.map(key => key.replace("frc", ""));
-    
-    const redTeamPredictions = redTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling));
-    const blueTeamPredictions = blueTeamNumbers.map(teamNumber => generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling));
-    
-    const redTotalScore = redTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
-    const blueTotalScore = blueTeamPredictions.reduce((sum, team) => sum + team.totalExpectedPoints, 0);
-    
-    const redWinPercentage = calculateWinPercentage(redTotalScore, blueTotalScore);
-    const blueWinPercentage = 100 - redWinPercentage;
-    
+  const processTeamPredictions = useCallback((match: TBAMatch) => {
+    const redTeamNumbers = match.alliances.red.team_keys.map((key) => key.replace("frc", ""));
+    const blueTeamNumbers = match.alliances.blue.team_keys.map((key) => key.replace("frc", ""));
+
+    const redTeamPredictions = redTeamNumbers.map((teamNumber) =>
+      generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling)
+    );
+    const blueTeamPredictions = blueTeamNumbers.map((teamNumber) =>
+      generateTeamPrediction(teamNumber, dataSource, processingMode, zeroHandling)
+    );
+
+    const redMetrics = aggregateAllianceMetrics(redTeamPredictions);
+    const blueMetrics = aggregateAllianceMetrics(blueTeamPredictions);
+    const { redWinPercentage, blueWinPercentage } = projectMatchOutcome(redMetrics, blueMetrics);
+
     setRedAllianceData({
       teams: redTeamPredictions,
-      totalExpectedScore: redTotalScore,
-      winPercentage: redWinPercentage
+      totalExpectedScore: redMetrics.totalExpected,
+      winPercentage: redWinPercentage,
+      autonExpected: redMetrics.autonExpected,
+      teleopExpected: redMetrics.teleopExpected,
+      endgameExpected: redMetrics.endgameExpected,
+      confidence: redMetrics.confidence,
+      climbPotential: redMetrics.climbPotential,
     });
-    
+
     setBlueAllianceData({
       teams: blueTeamPredictions,
-      totalExpectedScore: blueTotalScore,
-      winPercentage: blueWinPercentage
+      totalExpectedScore: blueMetrics.totalExpected,
+      winPercentage: blueWinPercentage,
+      autonExpected: blueMetrics.autonExpected,
+      teleopExpected: blueMetrics.teleopExpected,
+      endgameExpected: blueMetrics.endgameExpected,
+      confidence: blueMetrics.confidence,
+      climbPotential: blueMetrics.climbPotential,
     });
   }, [dataSource, processingMode, zeroHandling]);
 
   const fetchMatchData = async () => {
-    if (!matchNumber) return;
-    
+    const normalizedMatchNumber = matchNumber.trim();
+    if (!normalizedMatchNumber) {
+      setError("Please enter a valid match number.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      if (!tbaKey) {
-        throw new Error("TBA API key not found. Please set it in the Targeted Planning page.");
+      if (configLoading) {
+        throw new Error("Configuration is still loading. Please try again.");
       }
-      
-      if (!eventCode) {
-        throw new Error("Event code not found. Please set it in the Targeted Planning page.");
+
+      if (configError) {
+        throw new Error(configError);
       }
-      
-      console.log(`Fetching match data for ${eventCode}_qm${matchNumber} with key: ${tbaKey.substring(0, 5)}...`);
-      
+
+      if (!config?.tbaApiKey || !config?.eventCode) {
+        throw new Error("TBA API key or event code not configured. Update the Settings page first.");
+      }
+
       const response = await fetch(
-        `https://www.thebluealliance.com/api/v3/match/${eventCode}_qm${matchNumber}`,
+        `/api/tba/match?matchNumber=${encodeURIComponent(normalizedMatchNumber)}`,
         {
-          headers: {
-            "X-TBA-Auth-Key": tbaKey,
-          },
+          cache: "no-store",
         }
       );
-      
+
+      const payload = await response.json().catch(() => null);
+
       if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        const errorText = await response.text();
-        console.error(`Error response: ${errorText}`);
-        throw new Error(`Failed to fetch match data: ${response.statusText} (${response.status})`);
+        throw new Error(
+          payload?.message ?? `Failed to fetch match data (status ${response.status}).`
+        );
       }
-      
-      const data = await response.json();
-      console.log("Match data received:", data);
-      setMatchData(data);
+
+      if (!payload) {
+        throw new Error('Unexpected empty response from the TBA proxy.');
+      }
+
+      setMatchData(payload as TBAMatch);
     } catch (err) {
       console.error("Error fetching match data:", err);
       setError(`Failed to fetch match data: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -289,11 +483,6 @@ export default function MatchAnalysisPage() {
     return (mostCommon as 'p' | 'd' | 's' | 'n' | 'x') || 'n';
   };
 
-  const calculateWinPercentage = (redScore: number, blueScore: number): number => {
-    if (redScore + blueScore === 0) return 50;
-    return Math.round((redScore / (redScore + blueScore)) * 100);
-  };
-
   const handleDataSourceChange = useCallback((newSource: DataSource) => {
     setDataSource(newSource);
   }, []);
@@ -327,15 +516,10 @@ export default function MatchAnalysisPage() {
         />
       </div>
 
-      {dataSource === "live" && (
-        <div className="bg-yellow-900/30 border border-yellow-700 rounded-md p-4 mb-10">
-          <h3 className="text-yellow-400 font-medium mb-2">Limited Live Data Available</h3>
-          <p className="text-yellow-300/80">
-            The live data source currently has very limited data. For more accurate predictions, 
-            consider switching to the pre-scout data source which contains more historical data.
-          </p>
-        </div>
-      )}
+      <div className={`${dataSourceNotice.container} rounded-md p-4 mb-10 transition-colors`}>
+        <h3 className="text-white font-medium mb-2">{dataSourceNotice.title}</h3>
+        <p className="text-sm opacity-90">{dataSourceNotice.description}</p>
+      </div>
 
       <div className="mb-10">
         <DataProcessingControls
@@ -345,6 +529,43 @@ export default function MatchAnalysisPage() {
           currentZeroHandling={zeroHandling}
         />
       </div>
+
+      {predictionsReady && (
+        <Card className="bg-[#2A2A2A] border-gray-800 mb-12">
+          <CardHeader>
+            <CardTitle className="text-white text-2xl">Model Projection</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-3">
+            <div>
+              <p className="text-sm uppercase tracking-[0.18em] text-gray-400">Projected Winner</p>
+              <p className={`text-2xl font-semibold mt-1 ${projectedWinnerTone}`}>
+                {projectedWinner}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Red {redAllianceData.winPercentage.toFixed(1)}% • Blue {blueAllianceData.winPercentage.toFixed(1)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-sm uppercase tracking-[0.18em] text-gray-400">Projected Score Split</p>
+              <p className="text-2xl font-semibold text-white mt-1">
+                {redAllianceData.totalExpectedScore.toFixed(1)} - {blueAllianceData.totalExpectedScore.toFixed(1)}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Expected spread of {projectedSpread.toFixed(1)} pts based on combined EPA & climb outlook.
+              </p>
+            </div>
+            <div>
+              <p className="text-sm uppercase tracking-[0.18em] text-gray-400">Model Confidence</p>
+              <p className="text-2xl font-semibold text-white mt-1">
+                {(aggregateConfidence * 100).toFixed(0)}%
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Climb reliability gap: {(climbReliabilityGap * 100).toFixed(0)}% • Data depth reflects average matches scouted.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
@@ -364,13 +585,37 @@ export default function MatchAnalysisPage() {
             </div>
             <button
               onClick={fetchMatchData}
-              disabled={loading || !matchNumber}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              disabled={
+                loading ||
+                !matchNumber.trim() ||
+                configLoading ||
+                !config?.tbaApiKey ||
+                !config?.eventCode
+              }
+              className="w-full bg-brandBlue-accent text-white py-2 px-4 rounded-md hover:bg-brandBlue disabled:opacity-50"
             >
               {loading ? "Loading..." : "Fetch Match Data"}
             </button>
             {error && (
               <div className="text-red-400 text-sm mt-4">{error}</div>
+            )}
+            {!configLoading && !config?.tbaApiKey && (
+              <p className="text-yellow-500 mt-4">
+                TBA API key not found. Configure it on the{' '}
+                <a href="/dashboard/settings" className="underline">
+                  Settings
+                </a>{' '}
+                page.
+              </p>
+            )}
+            {!configLoading && !config?.eventCode && (
+              <p className="text-yellow-500 mt-4">
+                Event code not found. Configure it on the{' '}
+                <a href="/dashboard/settings" className="underline">
+                  Settings
+                </a>{' '}
+                page.
+              </p>
             )}
           </div>
         </div>
@@ -390,7 +635,7 @@ export default function MatchAnalysisPage() {
                       <span className="text-white">{team.replace("frc", "")}</span>
                       <button
                         onClick={() => navigateToTeamAnalysis(team.replace("frc", ""))}
-                        className="text-blue-400 hover:text-blue-300"
+                        className="text-brandBlue-accent hover:text-brandBlue-soft"
                       >
                         <ArrowRight className="h-4 w-4" />
                       </button>
@@ -399,7 +644,7 @@ export default function MatchAnalysisPage() {
                 </div>
               </div>
               <div>
-                <h3 className="font-medium text-blue-400 mb-4">Blue Alliance</h3>
+                <h3 className="font-medium text-brandBlue-accent mb-4">Blue Alliance</h3>
                 <div className="space-y-3">
                   {matchData.alliances.blue.team_keys.map((team) => (
                     <div
@@ -409,7 +654,7 @@ export default function MatchAnalysisPage() {
                       <span className="text-white">{team.replace("frc", "")}</span>
                       <button
                         onClick={() => navigateToTeamAnalysis(team.replace("frc", ""))}
-                        className="text-blue-400 hover:text-blue-300"
+                        className="text-brandBlue-accent hover:text-brandBlue-soft"
                       >
                         <ArrowRight className="h-4 w-4" />
                       </button>
@@ -431,10 +676,10 @@ export default function MatchAnalysisPage() {
                 <div key={team.teamNumber} className="border border-gray-700 rounded-lg p-6 bg-[#1A1A1A]">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-medium text-white">Team {team.teamNumber}</h3>
-                    <button
-                      onClick={() => navigateToTeamAnalysis(team.teamNumber)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
+                      <button
+                        onClick={() => navigateToTeamAnalysis(team.teamNumber)}
+                        className="text-brandBlue-accent hover:text-brandBlue-soft"
+                      >
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -480,7 +725,10 @@ export default function MatchAnalysisPage() {
                   <div>
                     <h4 className="font-medium mb-2 text-gray-300">Endgame</h4>
                     <div className="text-sm text-gray-300">
-                      <div>Climb: {getClimbStatus(team.endgame.climbPrediction)}</div>
+                      <div className="flex items-center gap-2">
+                        <span>Climb:</span>
+                        {getClimbStatus(team.endgame.climbPrediction)}
+                      </div>
                       <div className="font-medium text-white">
                         Expected Points: {team.endgame.expectedPoints.toFixed(1)}
                       </div>
@@ -495,28 +743,34 @@ export default function MatchAnalysisPage() {
                 </div>
               ))}
               
-              <div className="border-t border-gray-700 pt-4">
+              <div className="border-t border-gray-700 pt-4 space-y-1">
                 <div className="text-lg font-bold text-white">
-                  Alliance Total: {redAllianceData.totalExpectedScore.toFixed(1)} points
+                  Alliance Total: {redAllianceData.totalExpectedScore.toFixed(1)} pts
                 </div>
                 <div className="text-sm text-gray-400">
-                  Win Probability: {redAllianceData.winPercentage}%
+                  Auton: {redAllianceData.autonExpected.toFixed(1)} • Teleop: {redAllianceData.teleopExpected.toFixed(1)} • Endgame: {redAllianceData.endgameExpected.toFixed(1)}
+                </div>
+                <div className="text-sm text-gray-400">
+                  Climb Reliability: {(redAllianceData.climbPotential * 100).toFixed(0)}% • Data Confidence: {(redAllianceData.confidence * 100).toFixed(0)}%
+                </div>
+                <div className="text-sm text-brandBlue-soft font-semibold">
+                  Model Win Projection: {redAllianceData.winPercentage.toFixed(1)}%
                 </div>
               </div>
             </div>
           </div>
 
           <div className="bg-[#2A2A2A] rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold mb-8 text-blue-400">Blue Alliance Predictions</h2>
+            <h2 className="text-2xl font-semibold mb-8 text-brandBlue-accent">Blue Alliance Predictions</h2>
             <div className="space-y-8">
               {blueAllianceData.teams.map((team) => (
                 <div key={team.teamNumber} className="border border-gray-700 rounded-lg p-6 bg-[#1A1A1A]">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-medium text-white">Team {team.teamNumber}</h3>
-                    <button
-                      onClick={() => navigateToTeamAnalysis(team.teamNumber)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
+                      <button
+                        onClick={() => navigateToTeamAnalysis(team.teamNumber)}
+                        className="text-brandBlue-accent hover:text-brandBlue-soft"
+                      >
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -562,7 +816,10 @@ export default function MatchAnalysisPage() {
                   <div>
                     <h4 className="font-medium mb-2 text-gray-300">Endgame</h4>
                     <div className="text-sm text-gray-300">
-                      <div>Climb: {getClimbStatus(team.endgame.climbPrediction)}</div>
+                      <div className="flex items-center gap-2">
+                        <span>Climb:</span>
+                        {getClimbStatus(team.endgame.climbPrediction)}
+                      </div>
                       <div className="font-medium text-white">
                         Expected Points: {team.endgame.expectedPoints.toFixed(1)}
                       </div>
@@ -577,12 +834,18 @@ export default function MatchAnalysisPage() {
                 </div>
               ))}
               
-              <div className="border-t border-gray-700 pt-4">
+              <div className="border-t border-gray-700 pt-4 space-y-1">
                 <div className="text-lg font-bold text-white">
-                  Alliance Total: {blueAllianceData.totalExpectedScore.toFixed(1)} points
+                  Alliance Total: {blueAllianceData.totalExpectedScore.toFixed(1)} pts
                 </div>
                 <div className="text-sm text-gray-400">
-                  Win Probability: {blueAllianceData.winPercentage}%
+                  Auton: {blueAllianceData.autonExpected.toFixed(1)} • Teleop: {blueAllianceData.teleopExpected.toFixed(1)} • Endgame: {blueAllianceData.endgameExpected.toFixed(1)}
+                </div>
+                <div className="text-sm text-gray-400">
+                  Climb Reliability: {(blueAllianceData.climbPotential * 100).toFixed(0)}% • Data Confidence: {(blueAllianceData.confidence * 100).toFixed(0)}%
+                </div>
+                <div className="text-sm text-brandBlue-soft font-semibold">
+                  Model Win Projection: {blueAllianceData.winPercentage.toFixed(1)}%
                 </div>
               </div>
             </div>
@@ -593,13 +856,19 @@ export default function MatchAnalysisPage() {
   );
 }
 
-const getClimbStatus = (status: string) => {
+const getClimbStatus = (status: string): ReactNode => {
   switch (status) {
-    case 'p': return '🅿️ Parked';
-    case 'd': return '🟣 Deep Climb';
-    case 's': return '🔵 Shallow Climb';
-    case 'n': return '❌ Not Climb';
-    case 'x': return '❌ Fail Climb';
-    default: return '❓ Unknown';
+    case 'd':
+      return <StatusPill tone="positive">Deep Climb</StatusPill>;
+    case 's':
+      return <StatusPill tone="info">Shallow Climb</StatusPill>;
+    case 'p':
+      return <StatusPill tone="warning">Parked</StatusPill>;
+    case 'x':
+      return <StatusPill tone="negative">Failed Attempt</StatusPill>;
+    case 'n':
+      return <StatusPill tone="negative">No Attempt</StatusPill>;
+    default:
+      return <StatusPill tone="warning">Unknown</StatusPill>;
   }
 };
